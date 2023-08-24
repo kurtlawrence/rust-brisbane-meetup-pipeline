@@ -1,0 +1,2564 @@
+<!DOCTYPE html>
+<!--
+  Copyright 2010 Google Inc.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+
+  Original slides: Marcin Wichary (mwichary@google.com)
+  Modifications: Ernest Delgado (ernestd@google.com)
+                 Alex Russell (slightlyoff@chromium.org)
+
+  landslide modifications: Adam Zapletal (adamzap@gmail.com)
+                           Nicolas Perriault (nperriault@gmail.com)
+  introduce highlightjs: Kurt Lawrence (kurtlawrence.info)
+-->
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Integrating WASM <br> Building and deploying WASM within a web app</title>
+    <!-- Styles -->
+    
+    <style type="text/css" media="print">
+      * {
+    margin: 0;
+    padding: 0;
+}
+
+@page {
+    size: landscape;
+}
+
+body {
+    font: 100% sans-serif;
+    padding: 0;
+    margin: 0;
+}
+
+div.slide {
+    min-width: 800px;
+    min-height: 600px;
+    overflow: hidden;
+    page-break-after: always;
+}
+
+div.slide div.inner {
+    width: 800px;
+    height: 600px;
+    margin: auto;
+    display: table-cell;
+}
+
+h1 {
+    font-size: 2em;
+}
+
+header h1 {
+	padding-bottom: .5em;
+}
+
+h2 {
+    font-size: 1.4em;
+}
+
+h3 {
+    margin: 1em 0;
+}
+
+ul {
+    margin: 0;
+    padding: 0;
+}
+
+p, li, pre {
+    margin: 1em 0;
+}
+
+li {
+    margin-left: 2em;
+}
+
+a {
+    color: #000000;
+}
+
+pre, code {
+    max-width: 800px;
+    background: #eee;
+    font-family: Monaco, monospace;
+    font-size: 90%;
+}
+
+pre {
+    padding: .2em .5em;
+    overflow: hidden;
+}
+
+code {
+    padding: 0 .2em;
+}
+
+.slide header:only-child h1 {
+  line-height: 120%;
+  text-align: center;
+  vertical-align: middle;
+  height: 600px;
+  width: 800px;
+  font-size: 36px;
+}
+
+#toc, #help, .slide aside, .slide footer, .slide .notes,
+.presenter_notes, #current_presenter_notes, #presenter_note {
+  display: none;
+}
+
+    </style>
+    <style type="text/css" media="screen, projection">
+      @import url(http://fonts.googleapis.com/css?family=Open+Sans);
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap');
+
+/* Kurt Additions */
+div.highlight pre {
+	background: #f3f3f3;
+	padding: 10px;
+	font-family: 'Fira Code', 'Source Code Pro', monospace;
+}
+
+code {
+	background: #f3f3f3;
+	padding: 3px 5px;
+	border-radius: 5px;
+	font-family: 'Fira Code', 'Source Code Pro', monospace;
+}
+
+
+blockquote {
+	background: rgb(241, 246, 249);
+	border-left: #b6b6ff 2px solid;
+	padding-left: 5px;
+}
+/******************/
+
+body {
+  font-family: Ubuntu, 'Open Sans', Arial, sans-serif;
+  background: #778;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+div.presentation {
+  position: absolute;
+  width: 100%;
+  display: table-cell;
+  vertical-align: middle;
+  height: 100%;
+  background: inherit;
+}
+
+div.presentation > h1 {
+  display: none;
+}
+
+div.slides, body.expose div.slides.nocontext {
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  position: absolute;
+  display: block;
+}
+
+div.slides.nocontext {
+  width: 900px;
+  margin: 0 auto;
+  overflow: hidden;
+  position: relative;
+  left: auto;
+  top: auto;
+}
+
+div.slide {
+  display: inline;
+  position: absolute;
+  overflow: hidden;
+  width: 900px;
+  height: 700px;
+  margin-top: -350px;
+  margin-left: -400px;
+  left: 50%;
+  top: 50%;
+/*
+  background: -webkit-gradient(linear, left bottom, left top, from(#eee), to(#fff));
+  background: -moz-linear-gradient(bottom, #eee, #fff);
+*/
+  background-color: white;
+  -webkit-transition: margin 0.25s ease-in-out;
+  -moz-transition: margin 0.25s ease-in-out;
+  -o-transition: margin 0.25s ease-in-out;
+  border-top-left-radius: 10px;
+  -moz-border-radius-topleft: 10px;
+  -webkit-border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  -moz-border-radius-topright: 10px;
+  -webkit-border-top-right-radius: 10px;
+  border-bottom-right-radius: 10px;
+  -moz-border-radius-bottomright: 10px;
+  -webkit-border-bottom-right-radius: 10px;
+  border-bottom-left-radius: 10px;
+  -moz-border-radius-bottomleft: 10px;
+  -webkit-border-bottom-left-radius: 10px;
+}
+
+/* Expose */
+
+body.expose div.slides {
+  float: left;
+  position: relative;
+  overflow: auto;
+  margin-bottom: 10px;
+}
+
+body.expose div.slide {
+  display: block;
+  float: left;
+  position: relative;
+  left: auto !important;
+  top: auto !important;
+  margin: 10px !important;
+  -webkit-transition: none;
+  -moz-transition: none;
+  -o-transition: none;
+  -moz-transform: scale(.33, .33);
+  -moz-transform-origin: 0 0;
+  -webkit-transform: scale(.33, .33);
+  -webkit-transform-origin: 0 0;
+  -o-transform: scale(.33, .33);
+  -o-transform-origin: 0 0;
+  -webkit-transition: none;
+  -moz-transition: none;
+  -o-transition: none;
+  cursor: pointer;
+}
+
+body.expose div.slide:hover {
+  background: -webkit-gradient(linear, left bottom, left top, from(#bdd), to(#fff));
+  background-color: #eee;
+  background: -moz-linear-gradient(bottom, #bdd, #fff);
+}
+
+body.expose .slide-wrapper {
+  float: left;
+  position: relative;
+  margin: .5%;
+  width: 300px;
+  height: 233px;
+}
+
+body.expose .slide footer {
+}
+
+body.expose .slide .inner {
+}
+
+body.expose .slide.far-past,
+body.expose .slide.past,
+body.expose .slide.future,
+body.expose .slide.far-future {
+  margin-left: 0;
+}
+
+body.expose .slide.current {
+  background: -webkit-gradient(linear, left bottom, left top, from(#ddb), to(#fff));
+  background-color: #eee;
+  background: -moz-linear-gradient(bottom, #ddb, #fff);
+  border: 16px solid #fff;
+  -moz-transform: scale(.315, .315);
+  -moz-transform-origin: 0 0;
+  -webkit-transform: scale(.315, .315);
+  -webkit-transform-origin: 0 0;
+  -o-transform: scale(.315, .315);
+  -o-transform-origin: 0 0;
+}
+
+/* Presenter Mode */
+
+body.presenter_view div.slide {
+  display: inline;
+  position: absolute;
+  overflow: hidden;
+  -moz-transform: scale(.5, .5);
+  -moz-transform-origin: 0 0;
+  -webkit-transform: scale(.5, .5);
+  -webkit-transform-origin: 0 0;
+  -o-transform: scale(.5, .5);
+  -o-transform-origin: 0 0;
+    margin-top: -300px;
+}
+
+body.presenter_view .slide.far-past {
+  display: block;
+  margin-left: -1500px;
+}
+
+body.presenter_view .slide.past {
+  display: block;
+  margin-left: -975px;
+}
+
+body.presenter_view .slide.current {
+  display: block;
+  margin-left: -475px;
+  border: 8px solid maroon;
+  z-index: 2;
+}
+
+body.presenter_view .slide.future {
+  display: block;
+  margin-left: 25px;
+  z-index: 1;
+}
+
+body.presenter_view .slide.far-future {
+  display: block;
+  margin-left: 525px;
+}
+
+body.presenter_view div#current_presenter_notes {
+    visibility: visible;
+    display: block;
+    position: absolute;
+    overflow: auto;
+    vertical-align: middle;
+    left: 50%;
+    top: 50%;
+    margin-left: -475px;
+    margin-top: 100px;
+    z-index: 2;
+    width: 950px;
+    border-style: solid;
+    height: 30%;
+    background-color: silver;
+}
+
+body.presenter_view div#current_presenter_notes section {
+  font-family: Ubuntu, 'Open Sans', Arial, sans-serif;
+  color: black;
+  text-shadow: rgba(0, 0, 0, 0.2) 0 2px 5px;
+  display: block;
+  overflow: visible;
+    position: relative;
+    background-color: #fffeff;
+    height: 120px;
+    margin-right: 30px;
+    margin-top: 60px;
+    margin-left: 30px;
+    padding-right: 10px;
+    padding-left: 10px;
+    padding-top: 10px;
+}
+
+body.presenter_view div#current_presenter_notes section p {
+    margin: 0;
+}
+
+body.presenter_view div#current_presenter_notes h1 {
+    font-size: 50%;
+    display: block;
+}
+
+div#current_presenter_notes {
+  display: none;
+}
+
+div.slide div.presenter_notes, div.slides div.presenter_notes {
+  display: none;
+}
+
+/* Slide styles */
+
+div.slide p {
+  font-size: 20px;
+}
+
+.slide.far-past {
+  display: block;
+  margin-left: -2400px;
+}
+
+.slide.past {
+  display: block;
+  margin-left: -1400px;
+}
+
+.slide.current {
+  display: block;
+  margin-left: -450px;
+}
+
+.slide.future {
+  display: block;
+  margin-left: 500px;
+}
+
+.slide.far-future {
+  display: block;
+  margin-left: 1500px;
+}
+
+body.three-d div.slides {
+  -webkit-transform: translateX(50px) scale(0.8) rotateY(10deg);
+  -moz-transform: translateX(50px) scale(0.8) rotateY(10deg);
+  -o-transform: translateX(50px) scale(0.8) rotateY(10deg);
+}
+
+
+/* Content */
+header:not(:only-child) {
+  font-family: Ubuntu, 'Open Sans', Arial, sans-serif;
+  font-weight: normal;
+  font-size: 50px;
+  letter-spacing: -.05em;
+  color: #515151;
+  /* text-shadow: rgba(0, 0, 0, 0.2) 0 2px 5px; */
+  position: absolute;
+  left: 30px;
+  top: 25px;
+  margin: 0;
+  padding: 0;
+}
+
+header h1, header h2, header h3, header h4, header h5, header h6 {
+  display: inline;
+  font-size: 100%;
+  font-weight: normal;
+  padding: 0;
+  margin: 0;
+}
+
+header h1 {
+	border-bottom: 2px solid #cdc9ff;
+}
+
+header h2:first-child {
+  margin-top: 0;
+}
+
+section, .slide header:only-child h1 {
+  font-family: Ubuntu, 'Open Sans', Arial, sans-serif;
+  color: #515151;
+  /* color: #3f3f3f; */
+  /* text-shadow: rgba(0, 0, 0, 0.2) 0 2px 5px; */
+  margin-left: 30px;
+  margin-right: 30px;
+  margin-top: 100px;
+  display: block;
+  overflow: hidden;
+}
+
+img { display: block; margin: auto; }
+
+section img.align-center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+section img.align-right {
+  display: block;
+  margin-left: auto;
+  margin-right: 0;
+}
+
+section img.align-left {
+  display: block;
+  margin-right: auto;
+  margin-left: 0;
+}
+
+a {
+  color: inherit;
+  display: inline-block;
+  text-decoration: none;
+  line-height: 110%;
+  border-bottom: 2px solid #3f3f3f;
+}
+
+pre {
+  font-size: 16px;
+  font-family: "Fira Code", "Source Code Pro", "Courier New", monospace;
+}
+
+li {
+  list-style: none;
+  padding: 10px 0;
+  font-size: 20px;
+}
+
+li:before {
+  content:'\2022';
+  display: block;
+  position: relative;
+  max-width: 0px;
+  max-height: 0px;
+  left: -20px;
+  top: -0px;
+  color: #515151;
+  font-size: 20px;
+}
+
+li li {
+  list-style: none;
+  padding: 5px 0;
+  font-size: 18px;
+}
+
+li li:before {
+  content: '-';
+  display: block;
+  position: relative;
+  max-width: 0px;
+  max-height: 0px;
+  left: -18px;
+  top: -0px;
+  color: #515151;
+  font-size: 18px;
+}
+
+.slide header:only-child h1 {
+  line-height: 180%;
+  text-align: center;
+  display: table-cell;
+  vertical-align: middle;
+  height: 700px;
+  width: 900px;
+  font-size: 50px;
+  margin-top:100px;
+  margin-bottom:100px;
+}
+
+.sidebar {
+  clear: both;
+  background: -webkit-gradient(linear, top right, bottom right, from(#dde), to(#fff));
+  -webkit-transition: margin 0.25s ease-in-out;
+  background-color: #eee;
+  background: -moz-linear-gradient(right, #dde, #fff);
+  border-right: 5px solid #ccd;
+  z-index: 9999999;
+  height: 100%;
+  overflow: hidden;
+  top: 0;
+  position: absolute;
+  display: block;
+  margin: 0;
+  margin-left: -400px;
+  padding: 10px 16px;
+  overflow: auto;
+  -webkit-transition: margin 0.2s ease-in-out;
+  -moz-transition: margin 0.2s ease-in-out;
+  -o-transition: margin 0.2s ease-in-out;
+}
+
+.sidebar h2 {
+  text-shadow: rgba(0, 0, 0, 0.2) 0 2px 5px;
+  margin: 0 0 16px;
+  padding: 0;
+}
+
+.sidebar table {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border-collapse: collapse;
+}
+
+.sidebar table caption {
+  display: none;
+}
+
+.sidebar tr {
+  margin: 2px 0;
+  border-bottom: 1px solid #ccc;
+}
+
+.sidebar th {
+  text-align: left;
+  font-weight: normal;
+  max-width: 300px;
+  overflow: hidden;
+}
+
+.sidebar tr.sub th {
+  text-indent: 20px;
+}
+
+.sidebar td {
+  text-align: right;
+  min-width: 20px;
+}
+
+.sidebar a {
+  display: block;
+  text-decoration: none;
+  border-bottom: none;
+  padding: 4px 0;
+}
+
+.sidebar tr.active {
+  background: #ff0;
+}
+
+aside {
+  display: none;
+}
+  aside.source {
+    position: absolute;
+    bottom: 6px;
+    left: 10px;
+    text-indent: 10px;
+  }
+  aside.page_number {
+    position: absolute;
+    bottom: 6px;
+    right: 10px;
+    text-indent: 10px;
+  }
+
+.notes {
+  display: none;
+  padding: 10px;
+  background: #ccc;
+  border-radius: 10px;
+  -moz-border-radius: 10px;
+  -webkit-border-radius: 10px;
+}
+  div.slide p.notes {
+    font-size: 90%;
+}
+
+/* Pygments default theme */
+.hll { background-color: #ffffcc }
+.c { color: #408080; font-style: italic } /* Comment */
+.err { border: 1px solid #FF0000 } /* Error */
+.k { color: #008000; font-weight: bold } /* Keyword */
+.o { color: #666666 } /* Operator */
+.cm { color: #408080; font-style: italic } /* Comment.Multiline */
+.cp { color: #BC7A00 } /* Comment.Preproc */
+.c1 { color: #408080; font-style: italic } /* Comment.Single */
+.cs { color: #408080; font-style: italic } /* Comment.Special */
+.gd { color: #A00000 } /* Generic.Deleted */
+.ge { font-style: italic } /* Generic.Emph */
+.gr { color: #FF0000 } /* Generic.Error */
+.gh { color: #000080; font-weight: bold } /* Generic.Heading */
+.gi { color: #00A000 } /* Generic.Inserted */
+.go { color: #808080 } /* Generic.Output */
+.gp { color: #000080; font-weight: bold } /* Generic.Prompt */
+.gs { font-weight: bold } /* Generic.Strong */
+.gu { color: #800080; font-weight: bold } /* Generic.Subheading */
+.gt { color: #0040D0 } /* Generic.Traceback */
+.kc { color: #008000; font-weight: bold } /* Keyword.Constant */
+.kd { color: #008000; font-weight: bold } /* Keyword.Declaration */
+.kn { color: #008000; font-weight: bold } /* Keyword.Namespace */
+.kp { color: #008000 } /* Keyword.Pseudo */
+.kr { color: #008000; font-weight: bold } /* Keyword.Reserved */
+.kt { color: #B00040 } /* Keyword.Type */
+.m { color: #666666 } /* Literal.Number */
+.s { color: #BA2121 } /* Literal.String */
+.na { color: #7D9029 } /* Name.Attribute */
+.nb { color: #008000 } /* Name.Builtin */
+.nc { color: #0000FF; font-weight: bold } /* Name.Class */
+.no { color: #880000 } /* Name.Constant */
+.nd { color: #AA22FF } /* Name.Decorator */
+.ni { color: #999999; font-weight: bold } /* Name.Entity */
+.ne { color: #D2413A; font-weight: bold } /* Name.Exception */
+.nf { color: #0000FF } /* Name.Function */
+.nl { color: #A0A000 } /* Name.Label */
+.nn { color: #0000FF; font-weight: bold } /* Name.Namespace */
+.nt { color: #008000; font-weight: bold } /* Name.Tag */
+.nv { color: #19177C } /* Name.Variable */
+.ow { color: #AA22FF; font-weight: bold } /* Operator.Word */
+.w { color: #bbbbbb } /* Text.Whitespace */
+.mf { color: #666666 } /* Literal.Number.Float */
+.mh { color: #666666 } /* Literal.Number.Hex */
+.mi { color: #666666 } /* Literal.Number.Integer */
+.mo { color: #666666 } /* Literal.Number.Oct */
+.sb { color: #BA2121 } /* Literal.String.Backtick */
+.sc { color: #BA2121 } /* Literal.String.Char */
+.sd { color: #BA2121; font-style: italic } /* Literal.String.Doc */
+.s2 { color: #BA2121 } /* Literal.String.Double */
+.se { color: #BB6622; font-weight: bold } /* Literal.String.Escape */
+.sh { color: #BA2121 } /* Literal.String.Heredoc */
+.si { color: #BB6688; font-weight: bold } /* Literal.String.Interpol */
+.sx { color: #008000 } /* Literal.String.Other */
+.sr { color: #BB6688 } /* Literal.String.Regex */
+.s1 { color: #BA2121 } /* Literal.String.Single */
+.ss { color: #19177C } /* Literal.String.Symbol */
+.bp { color: #008000 } /* Name.Builtin.Pseudo */
+.vc { color: #19177C } /* Name.Variable.Class */
+.vg { color: #19177C } /* Name.Variable.Global */
+.vi { color: #19177C } /* Name.Variable.Instance */
+.il { color: #666666 } /* Literal.Number.Integer.Long */
+
+#blank {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background-color: black;
+  width: 100%;
+  height: 100%;
+  z-index: 64;
+  display: none;
+}
+
+    </style>
+    
+    
+    <!-- /Styles -->
+    <!-- Javascripts -->
+    
+    <script>
+      function main() {
+    // Since we don't have the fallback of attachEvent and
+    // other IE only stuff we won't try to run JS for IE.
+    // It will run though when using Google Chrome Frame
+    if (document.all) { return; }
+
+    var currentSlideNo;
+    var notesOn = false;
+    var expanded = false;
+    var hiddenContext = false;
+    var blanked = false;
+    var slides = document.getElementsByClassName('slide');
+    var touchStartX = 0;
+    var spaces = /\s+/, a1 = [''];
+    var tocOpened = false;
+    var helpOpened = false;
+    var overviewActive = false;
+    var modifierKeyDown = false;
+    var scale = 1;
+    var showingPresenterView = false;
+    var presenterViewWin = null;
+    var isPresenterView = false;
+
+    var str2array = function(s) {
+        if (typeof s == 'string' || s instanceof String) {
+            if (s.indexOf(' ') < 0) {
+                a1[0] = s;
+                return a1;
+            } else {
+                return s.split(spaces);
+            }
+        }
+        return s;
+    };
+
+    var trim = function(str) {
+        return str.replace(/^\s\s*/, '').replace(/\s\s*$/, '');
+    };
+
+    var addClass = function(node, classStr) {
+        classStr = str2array(classStr);
+        var cls = ' ' + node.className + ' ';
+        for (var i = 0, len = classStr.length, c; i < len; ++i) {
+            c = classStr[i];
+            if (c && cls.indexOf(' ' + c + ' ') < 0) {
+                cls += c + ' ';
+            }
+        }
+        node.className = trim(cls);
+    };
+
+    var removeClass = function(node, classStr) {
+        var cls;
+        if (!node) {
+            throw 'no node provided';
+        }
+        if (classStr !== undefined) {
+            classStr = str2array(classStr);
+            cls = ' ' + node.className + ' ';
+            for (var i = 0, len = classStr.length; i < len; ++i) {
+                cls = cls.replace(' ' + classStr[i] + ' ', ' ');
+            }
+            cls = trim(cls);
+        } else {
+            cls = '';
+        }
+        if (node.className != cls) {
+            node.className = cls;
+        }
+    };
+
+    var getSlideEl = function(slideNo) {
+        if (slideNo > 0) {
+            return slides[slideNo - 1];
+        } else {
+            return null;
+        }
+    };
+
+    var getSlideTitle = function(slideNo) {
+        var el = getSlideEl(slideNo);
+        if (el) {
+            var headers = el.getElementsByTagName('header');
+            if (headers.length > 0) {
+                return el.getElementsByTagName('header')[0].innerText;
+            }
+        }
+        return null;
+    };
+
+    var getSlidePresenterNote = function(slideNo) {
+        var el = getSlideEl(slideNo);
+        if (el) {
+            var n = el.getElementsByClassName('presenter_notes');
+            if (n.length > 0) {
+                return n[0];
+            }
+        }
+        return null;
+    };
+
+    var changeSlideElClass = function(slideNo, className) {
+        var el = getSlideEl(slideNo);
+        if (el) {
+            removeClass(el, 'far-past past current future far-future');
+            addClass(el, className);
+        }
+    };
+
+    var updateSlideClasses = function(updateOther) {
+        window.location.hash = (isPresenterView ? "presenter" : "slide") + currentSlideNo;
+
+        for (var i=1; i<currentSlideNo-1; i++) {
+            changeSlideElClass(i, 'far-past');
+        }
+
+        changeSlideElClass(currentSlideNo - 1, 'past');
+        changeSlideElClass(currentSlideNo, 'current');
+        changeSlideElClass(currentSlideNo + 1, 'future');
+
+        for (i=currentSlideNo+2; i<slides.length+1; i++) {
+            changeSlideElClass(i, 'far-future');
+        }
+
+        highlightCurrentTocLink();
+
+        processContext();
+
+        document.getElementsByTagName('title')[0].innerText = getSlideTitle(currentSlideNo);
+
+        updatePresenterNotes();
+
+        if (updateOther) { updateOtherPage(); }
+    };
+
+    var updatePresenterNotes = function() {
+        if (!isPresenterView) { return; }
+
+        var existingNote = document.getElementById('current_presenter_notes');
+        var currentNote = getSlidePresenterNote(currentSlideNo).cloneNode(true);
+        currentNote.setAttribute('id', 'presenter_note');
+
+        existingNote.replaceChild(currentNote, document.getElementById('presenter_note'));
+    };
+
+    var highlightCurrentTocLink = function() {
+        var toc = document.getElementById('toc');
+
+        if (toc) {
+            var tocRows = toc.getElementsByTagName('tr');
+            for (var i=0; i<tocRows.length; i++) {
+                removeClass(tocRows.item(i), 'active');
+            }
+
+            var currentTocRow = document.getElementById('toc-row-' + currentSlideNo);
+            if (currentTocRow) {
+                addClass(currentTocRow, 'active');
+            }
+        }
+    };
+
+    var updateOtherPage = function() {
+        if (!showingPresenterView) { return; }
+
+        var w = isPresenterView ? window.opener : presenterViewWin;
+        w.postMessage('slide#' + currentSlideNo, '*');
+    };
+
+    var nextSlide = function() {
+        if (currentSlideNo < slides.length) {
+            currentSlideNo++;
+        }
+        updateSlideClasses(true);
+    };
+
+    var prevSlide = function() {
+        if (currentSlideNo > 1) {
+            currentSlideNo--;
+        }
+        updateSlideClasses(true);
+    };
+
+    var showNotes = function() {
+        var notes = getSlideEl(currentSlideNo).getElementsByClassName('notes');
+        for (var i = 0, len = notes.length; i < len; i++) {
+            notes.item(i).style.display = (notesOn) ? 'none':'block';
+        }
+        notesOn = !notesOn;
+    };
+
+    var showSlideNumbers = function() {
+        var asides = document.getElementsByClassName('page_number');
+        var hidden = asides[0].style.display != 'block';
+        for (var i = 0; i < asides.length; i++) {
+            asides.item(i).style.display = hidden ? 'block' : 'none';
+        }
+    };
+
+    var showSlideSources = function() {
+        var asides = document.getElementsByClassName('source');
+        var hidden = asides[0].style.display != 'block';
+        for (var i = 0; i < asides.length; i++) {
+            asides.item(i).style.display = hidden ? 'block' : 'none';
+        }
+    };
+
+    var showToc = function() {
+        if (helpOpened) {
+                showHelp();
+        }
+        var toc = document.getElementById('toc');
+        if (toc) {
+            toc.style.marginLeft = tocOpened ? '-' + (toc.clientWidth + 20) + 'px' : '0px';
+            tocOpened = !tocOpened;
+        }
+        updateOverview();
+    };
+
+    var showHelp = function() {
+        if (tocOpened) {
+                showToc();
+        }
+
+        var help = document.getElementById('help');
+
+        if (help) {
+            help.style.marginLeft = helpOpened ? '-' + (help.clientWidth + 20) + 'px' : '0px';
+            helpOpened = !helpOpened;
+        }
+    };
+
+    var showPresenterView = function() {
+        if (isPresenterView) { return; }
+
+        if (showingPresenterView) {
+            presenterViewWin.close();
+            presenterViewWin = null;
+            showingPresenterView = false;
+        } else {
+            presenterViewWin = open(window.location.pathname + "#presenter" + currentSlideNo, 'presenter_notes',
+                                                                    'directories=no,location=no,toolbar=no,menubar=no,copyhistory=no');
+            showingPresenterView = true;
+        }
+    };
+
+    var switch3D = function() {
+        if (document.body.className.indexOf('three-d') == -1) {
+            document.getElementsByClassName('presentation')[0].style.webkitPerspective = '1000px';
+            document.body.className += ' three-d';
+        } else {
+            window.setTimeout('document.getElementsByClassName(\'presentation\')[0].style.webkitPerspective = \'0\';', 2000);
+            document.body.className = document.body.className.replace(/three-d/, '');
+        }
+    };
+
+    var toggleOverview = function() {
+        if (!overviewActive) {
+            addClass(document.body, 'expose');
+            overviewActive = true;
+            setScale(1);
+        } else {
+            removeClass(document.body, 'expose');
+            overviewActive = false;
+            if (expanded) {
+                setScale(scale);    // restore scale
+            }
+        }
+        processContext();
+        updateOverview();
+    };
+
+    var updateOverview = function() {
+        try {
+            var presentation = document.getElementsByClassName('presentation')[0];
+        } catch (e) {
+            return;
+        }
+
+        if (isPresenterView) {
+            var action = overviewActive ? removeClass : addClass;
+            action(document.body, 'presenter_view');
+        }
+
+        var toc = document.getElementById('toc');
+
+        if (!toc) {
+            return;
+        }
+
+        if (!tocOpened || !overviewActive) {
+            presentation.style.marginLeft = '0px';
+            presentation.style.width = '100%';
+        } else {
+            presentation.style.marginLeft = toc.clientWidth + 'px';
+            presentation.style.width = (presentation.clientWidth - toc.clientWidth) + 'px';
+        }
+    };
+
+    var computeScale = function() {
+        var cSlide = document.getElementsByClassName('current')[0];
+        var sx = cSlide.clientWidth / window.innerWidth;
+        var sy = cSlide.clientHeight / window.innerHeight;
+        return 1 / Math.max(sx, sy);
+    };
+
+    var setScale = function(scale) {
+        var presentation = document.getElementsByClassName('slides')[0];
+        var transform = 'scale(' + scale + ')';
+        presentation.style.MozTransform = transform;
+        presentation.style.WebkitTransform = transform;
+        presentation.style.OTransform = transform;
+        presentation.style.msTransform = transform;
+        presentation.style.transform = transform;
+    };
+
+    var expandSlides = function() {
+        if (overviewActive) {
+            return;
+        }
+        if (expanded) {
+            setScale(1);
+            expanded = false;
+        } else {
+            scale = computeScale();
+            setScale(scale);
+            expanded = true;
+        }
+    };
+
+    var showContext = function() {
+        try {
+            var presentation = document.getElementsByClassName('slides')[0];
+            removeClass(presentation, 'nocontext');
+        } catch (e) {}
+    };
+
+    var hideContext = function() {
+        try {
+            var presentation = document.getElementsByClassName('slides')[0];
+            addClass(presentation, 'nocontext');
+        } catch (e) {}
+    };
+
+    var processContext = function() {
+        if (hiddenContext) {
+            hideContext();
+        } else {
+            showContext();
+        }
+    };
+
+    var toggleContext = function() {
+        hiddenContext = !hiddenContext;
+        processContext();
+    };
+
+    var toggleBlank = function() {
+        blank_elem = document.getElementById('blank');
+
+        blank_elem.style.display = blanked ? 'none' : 'block';
+
+        blanked = !blanked;
+    };
+
+    var isModifierKey = function(keyCode) {
+        switch (keyCode) {
+            case 16: // shift
+            case 17: // ctrl
+            case 18: // alt
+            case 91: // command
+                return true;
+                break;
+            default:
+                return false;
+                break;
+        }
+    };
+
+    var checkModifierKeyUp = function(event) {
+        if (isModifierKey(event.keyCode)) {
+            modifierKeyDown = false;
+        }
+    };
+
+    var checkModifierKeyDown = function(event) {
+        if (isModifierKey(event.keyCode)) {
+            modifierKeyDown = true;
+        }
+    };
+
+    var handleBodyKeyDown = function(event) {
+        switch (event.keyCode) {
+            case 13: // Enter
+                if (overviewActive) {
+                    toggleOverview();
+                }
+                break;
+            case 27: // ESC
+                toggleOverview();
+                break;
+            case 37: // left arrow
+            case 33: // page up
+                prevSlide();
+                break;
+            case 39: // right arrow
+            case 32: // space
+            case 34: // page down
+                nextSlide();
+                break;
+            case 50: // 2
+                if (!modifierKeyDown) {
+                        showNotes();
+                }
+                break;
+            case 51: // 3
+                if (!modifierKeyDown && !overviewActive) {
+                    switch3D();
+                }
+                break;
+            case 190: // .
+            case 48: // 0
+            case 66: // b
+                if (!modifierKeyDown && !overviewActive) {
+                    toggleBlank();
+                }
+                break;
+            case 67: // c
+                if (!modifierKeyDown && !overviewActive) {
+                    toggleContext();
+                }
+                break;
+            case 69: // e
+                if (!modifierKeyDown && !overviewActive) {
+                    expandSlides();
+                }
+                break;
+            case 72: // h
+                showHelp();
+                break;
+            case 78: // n
+                if (!modifierKeyDown && !overviewActive) {
+                    showSlideNumbers();
+                }
+                break;
+            case 80: // p
+                if (!modifierKeyDown && !overviewActive) {
+                    showPresenterView();
+                }
+                break;
+            case 83: // s
+                if (!modifierKeyDown && !overviewActive) {
+                    showSlideSources();
+                }
+                break;
+            case 84: // t
+                showToc();
+                break;
+        }
+    };
+
+    var handleWheel = function(event) {
+        if (tocOpened || helpOpened || overviewActive) {
+            return;
+        }
+
+        var delta = 0;
+
+        if (!event) {
+            event = window.event;
+        }
+
+        if (event.wheelDelta) {
+            delta = event.wheelDelta/120;
+            if (window.opera) delta = -delta;
+        } else if (event.detail) {
+            delta = -event.detail/3;
+        }
+
+        if (delta && delta <0) {
+            nextSlide();
+        } else if (delta) {
+            prevSlide();
+        }
+    };
+
+    var addSlideClickListeners = function() {
+        for (var i=0; i < slides.length; i++) {
+            var slide = slides.item(i);
+            slide.num = i + 1;
+            slide.addEventListener('click', function(e) {
+                if (overviewActive) {
+                    currentSlideNo = this.num;
+                    toggleOverview();
+                    updateSlideClasses(true);
+                    e.preventDefault();
+                }
+                return false;
+            }, true);
+        }
+    };
+
+    var addRemoteWindowControls = function() {
+        window.addEventListener("message", function(e) {
+            if (e.data.indexOf("slide#") != -1) {
+                    currentSlideNo = Number(e.data.replace('slide#', ''));
+                    updateSlideClasses(false);
+            }
+        }, false);
+    };
+
+    var addTouchListeners = function() {
+        document.addEventListener('touchstart', function(e) {
+            touchStartX = e.touches[0].pageX;
+        }, false);
+        document.addEventListener('touchend', function(e) {
+            var pixelsMoved = touchStartX - e.changedTouches[0].pageX;
+            var SWIPE_SIZE = 150;
+            if (pixelsMoved > SWIPE_SIZE) {
+                nextSlide();
+            }
+            else if (pixelsMoved < -SWIPE_SIZE) {
+             prevSlide();
+            }
+        }, false);
+    };
+
+    var addTocLinksListeners = function() {
+        var toc = document.getElementById('toc');
+        if (toc) {
+            var tocLinks = toc.getElementsByTagName('a');
+            for (var i=0; i < tocLinks.length; i++) {
+                tocLinks.item(i).addEventListener('click', function(e) {
+                    currentSlideNo = Number(this.attributes['href'].value.replace('#slide', ''));
+                    updateSlideClasses(true);
+                    e.preventDefault();
+                }, true);
+            }
+        }
+    };
+
+    // initialize
+
+    (function() {
+        if (window.location.hash == "") {
+            currentSlideNo = 1;
+        } else if (window.location.hash.indexOf("#presenter") != -1) {
+            currentSlideNo = Number(window.location.hash.replace('#presenter', ''));
+            isPresenterView = true;
+            showingPresenterView = true;
+            presenterViewWin = window;
+            addClass(document.body, 'presenter_view');
+        } else {
+            currentSlideNo = Number(window.location.hash.replace('#slide', ''));
+        }
+
+        document.addEventListener('keyup', checkModifierKeyUp, false);
+        document.addEventListener('keydown', handleBodyKeyDown, false);
+        document.addEventListener('keydown', checkModifierKeyDown, false);
+        document.addEventListener('DOMMouseScroll', handleWheel, false);
+
+        window.onmousewheel = document.onmousewheel = handleWheel;
+        window.onresize = expandSlides;
+
+        for (var i = 0, el; el = slides[i]; i++) {
+            addClass(el, 'slide far-future');
+        }
+        updateSlideClasses(false);
+
+        // add support for finger events (filter it by property detection?)
+        addTouchListeners();
+
+        addTocLinksListeners();
+
+        addSlideClickListeners();
+
+        addRemoteWindowControls();
+    })();
+}
+
+    </script>
+    
+    
+    <!-- /Javascripts -->
+
+	<!-- Code Syntax Highlighting -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/docco.min.css">
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+	<script>hljs.highlightAll();</script>
+</head>
+<body>
+  <div id="blank"></div>
+  <div class="presentation">
+    <div id="current_presenter_notes">
+      <div id="presenter_note"></div>
+    </div>
+    <div class="slides">
+      
+      <!-- slide source: ./pres.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>Integrating WASM <br> Building and deploying WASM within a web app</h1></header>
+            
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+              <p>to build preso <code>landslide ./pres.md -i -x extra -t ~/landslide-themes/simple/</code></p>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="./pres.md">./pres.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              1/24
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: ./pres.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>Usage Context</h1></header>
+            
+            
+            <section><ul>
+<li>Used with a (experimental) 3D visualiser for mining data</li>
+<li>👉 https://kurtlawrence.github.io/dirtvz/</li>
+<li>https://www.kurtlawrence.info/blog/detailed-web-based-3d-rendering-of-mining-spatial-data</li>
+<li>The WASM module is used for processing of the data:<ul>
+<li>Decoding binary data into triangle mesh structures</li>
+<li>Sampling meshes into various LODs and tiles</li>
+<li>On demand building of vertex data when loading tiles</li>
+</ul>
+</li>
+</ul></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="./pres.md">./pres.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              2/24
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: ./pres.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>Overview</h1></header>
+            
+            
+            <section><ul>
+<li><strong>Introduction</strong><ul>
+<li>Usage context</li>
+<li>Benefits of WASM</li>
+</ul>
+</li>
+<li><strong>Building and deploying</strong><ul>
+<li>Project structure</li>
+<li>Webpack config</li>
+<li>Deployment building</li>
+<li>Rust dependencies</li>
+<li>WASM JS -&gt; TS</li>
+</ul>
+</li>
+<li><strong>Integration examples</strong><ul>
+<li>Decoding binary data</li>
+<li>Generating representations</li>
+</ul>
+</li>
+</ul></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="./pres.md">./pres.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              3/24
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: ./pres.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>Benefits of WASM (or, why WASM?)</h1></header>
+            
+            
+            <section><ul>
+<li>Anecdotally faster?</li>
+<li>Write code in Rust!</li>
+<li><strong>Use existing libraries</strong><ul>
+<li>https://github.com/kurtlawrence/geom</li>
+</ul>
+</li>
+<li>Leverage more complex data structures</li>
+<li>Excels at things like string parsing, binary data encoding/decoding</li>
+<li>Testing (like <code>quickcheck</code>)</li>
+</ul></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="./pres.md">./pres.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              4/24
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: ./pres.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>Building and Deploying</h1></header>
+            
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="./pres.md">./pres.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              5/24
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: ./pres.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>Project Structure</h1></header>
+            
+            
+            <section><ul>
+<li>Incorporating WASM into webapp packaged with <code>webpack</code> and Elm frontend</li>
+<li>👉 https://github.com/kurtlawrence/dirtvz</li>
+<li>Folderised on <em>language</em></li>
+</ul>
+<pre><code class="sh"># Build Rust to WASM
+#   use --debug for debugging, BUT IS VERY SLOW!
+#   use --features=err-capture to get Rust stack trace printed to console
+wasm-pack build --out-dir wasmpkg --out-name wasm --target bundler
+# Builds Elm
+elm make elm/ViewerUI.elm --output=js/viewer-ui.js
+# Builds Typescript and bundles
+npm run build
+# Runs local dev server
+npm start
+</code></pre></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="./pres.md">./pres.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              6/24
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: ./pres.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>Project Structure</h1></header>
+            
+            
+            <section><pre><code class="plaintext">dirtvz/
+├── elm/                          &lt;- Elm source
+├── js/
+│   └── viewer-ui.js              &lt;- Elm compiles to this
+├── rust/                         &lt;- Rust source
+│   └── lib.rs                    
+├── ts/                           &lt;- Typescript source
+│   ├── viewer/
+│   ├── index.ts                  &lt;- Entry point (lib)
+│   ├── viewer-ui.ts              &lt;- Entry point (UI)
+│   ├── wasm.ts                   &lt;- Wrapper around `wasmpkg/wasm.js`
+│   ├── worker-spawn.ts
+│   └── worker.ts                 &lt;- Entry point (worker)
+├── wasmpkg/                      &lt;- Generated from `wasm-pack`
+│   ├── package.json
+│   ├── README.md
+│   ├── wasm_bg.js
+│   ├── wasm_bg.wasm
+│   ├── wasm_bg.wasm.d.ts
+│   ├── wasm.d.ts
+│   └── wasm.js
+├── Cargo.toml
+├── elm.json
+└── webpack.config.js
+</code></pre></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="./pres.md">./pres.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              7/24
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: ./pres.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>Webpack Config</h1></header>
+            
+            
+            <section><pre><code class="js">module.exports = {
+  // multiple packages
+  entry: {
+    dirtvz: &quot;./ts/index.ts&quot;,
+    &quot;dirtvz-ui&quot;: &quot;./ts/viewer-ui.ts&quot;,
+    &quot;dirtvz-worker&quot;: './ts/worker.ts',
+  },
+  // wasm support
+  experiments: {
+    asyncWebAssembly: true,
+  },
+  output: {
+    path: dist, // &lt;-- Bundle ends up here
+    filename: &quot;[name].js&quot;,
+    library: &quot;dirtvz&quot;,
+    libraryTarget: &quot;umd&quot;,
+  },
+//     new WasmPackPlugin({
+//       crateDirectory: __dirname,
+//       outName: &quot;wasm&quot;,
+//    }),
+  ],
+};
+</code></pre></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="./pres.md">./pres.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              8/24
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: ./pres.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>Building for Deployment</h1></header>
+            
+            
+            <section><p>👉 https://github.com/kurtlawrence/dirtvz/blob/main/Notes/DEPLOY.md</p>
+<ul>
+<li>Similar to dev (optimise for Elm code)</li>
+<li>After <code>npm run build</code> we get the contents of <code>dist/</code></li>
+</ul>
+<pre><code class="plaintext">dist
+├── 7daa9fc839da80a96cc0.module.wasm &lt;- This changes each build
+├── dirtvz.js                        &lt;- entry point (lib)
+├── dirtvz-ui.js                     &lt;- entry point (UI)
+├── dirtvz-worker.js                 &lt;- entry point (worker)
+├── favicon.ico
+├── icon512.png
+├── index.css
+└── index.html
+</code></pre>
+
+<ul>
+<li>Run a minification<ul>
+<li><code>uglifyjs dist/*.js --mangle --compress --in-situ</code></li>
+</ul>
+</li>
+<li>manually add artifacts to release page</li>
+<li>manually publish release of demo page</li>
+</ul></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="./pres.md">./pres.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              9/24
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: ./pres.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>Getting Dependencies to Build</h1></header>
+            
+            
+            <section><ul>
+<li>transitive dependencies can break builds if unable to target wasm</li>
+<li><code>geom</code> depends of <code>dxf</code> which itself has a dependency on <code>uuid</code></li>
+<li><code>uuid</code> has feature (<code>js</code>) to enable targeting <code>wasm32-unknown-unknown</code></li>
+</ul>
+<p>👉 https://github.com/ixmilia/dxf-rs/pull/43</p></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="./pres.md">./pres.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              10/24
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: ./pres.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>Exporter File</h1></header>
+            
+            
+            <section><ul>
+<li>Had issues with importing wasm from <code>wasmpkg/</code></li>
+<li>Introduced a simple typescript that exports directly</li>
+<li>Makes it a single point of change</li>
+</ul>
+<pre><code class="typescript">// in ts/wasm.ts
+export * from './../wasmpkg/wasm';
+export { memory } from './../wasmpkg/wasm_bg.wasm';
+</code></pre></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="./pres.md">./pres.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              11/24
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: ./pres.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>Integration Examples</h1></header>
+            
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="./pres.md">./pres.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              12/24
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: ./pres.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>Decoding Binary Data</h1></header>
+            
+            
+            <section><p><img alt="" src="data:image/svg+xml;base64,PHN2ZyBpZD0ibWVybWFpZC1zdmciIHdpZHRoPSIxMDAlIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHN0eWxlPSJtYXgtd2lkdGg6IDEyNTNweDsiIHZpZXdCb3g9Ii01MCAtMTAgMTI1MyA2MTIiIHJvbGU9ImdyYXBoaWNzLWRvY3VtZW50IGRvY3VtZW50IiBhcmlhLXJvbGVkZXNjcmlwdGlvbj0ic2VxdWVuY2UiIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIj48Zz48cmVjdCB4PSIxMDAzIiB5PSI1MjYiIGZpbGw9IiNlYWVhZWEiIHN0cm9rZT0iIzY2NiIgd2lkdGg9IjE1MCIgaGVpZ2h0PSI2NSIgcng9IjMiIHJ5PSIzIiBjbGFzcz0iYWN0b3IiLz48dGV4dCB4PSIxMDc4IiB5PSI1NTguNSIgZG9taW5hbnQtYmFzZWxpbmU9ImNlbnRyYWwiIGFsaWdubWVudC1iYXNlbGluZT0iY2VudHJhbCIgY2xhc3M9ImFjdG9yIiBzdHlsZT0idGV4dC1hbmNob3I6IG1pZGRsZTsgZm9udC1zaXplOiAxNnB4OyBmb250LXdlaWdodDogNDAwOyI+PHRzcGFuIHg9IjEwNzgiIGR5PSIwIj5pZGI8L3RzcGFuPjwvdGV4dD48L2c+PGc+PHJlY3QgeD0iODAzIiB5PSI1MjYiIGZpbGw9IiNlYWVhZWEiIHN0cm9rZT0iIzY2NiIgd2lkdGg9IjE1MCIgaGVpZ2h0PSI2NSIgcng9IjMiIHJ5PSIzIiBjbGFzcz0iYWN0b3IiLz48dGV4dCB4PSI4NzgiIHk9IjU1OC41IiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCIgYWxpZ25tZW50LWJhc2VsaW5lPSJjZW50cmFsIiBjbGFzcz0iYWN0b3IiIHN0eWxlPSJ0ZXh0LWFuY2hvcjogbWlkZGxlOyBmb250LXNpemU6IDE2cHg7IGZvbnQtd2VpZ2h0OiA0MDA7Ij48dHNwYW4geD0iODc4IiBkeT0iMCI+V0FTTTwvdHNwYW4+PC90ZXh0PjwvZz48Zz48cmVjdCB4PSI2MDAiIHk9IjUyNiIgZmlsbD0iI2VhZWFlYSIgc3Ryb2tlPSIjNjY2IiB3aWR0aD0iMTUwIiBoZWlnaHQ9IjY1IiByeD0iMyIgcnk9IjMiIGNsYXNzPSJhY3RvciIvPjx0ZXh0IHg9IjY3NSIgeT0iNTU4LjUiIGRvbWluYW50LWJhc2VsaW5lPSJjZW50cmFsIiBhbGlnbm1lbnQtYmFzZWxpbmU9ImNlbnRyYWwiIGNsYXNzPSJhY3RvciIgc3R5bGU9InRleHQtYW5jaG9yOiBtaWRkbGU7IGZvbnQtc2l6ZTogMTZweDsgZm9udC13ZWlnaHQ6IDQwMDsiPjx0c3BhbiB4PSI2NzUiIGR5PSIwIj5XZWJXb3JrZXI8L3RzcGFuPjwvdGV4dD48L2c+PGc+PHJlY3QgeD0iNDAwIiB5PSI1MjYiIGZpbGw9IiNlYWVhZWEiIHN0cm9rZT0iIzY2NiIgd2lkdGg9IjE1MCIgaGVpZ2h0PSI2NSIgcng9IjMiIHJ5PSIzIiBjbGFzcz0iYWN0b3IiLz48dGV4dCB4PSI0NzUiIHk9IjU1OC41IiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCIgYWxpZ25tZW50LWJhc2VsaW5lPSJjZW50cmFsIiBjbGFzcz0iYWN0b3IiIHN0eWxlPSJ0ZXh0LWFuY2hvcjogbWlkZGxlOyBmb250LXNpemU6IDE2cHg7IGZvbnQtd2VpZ2h0OiA0MDA7Ij48dHNwYW4geD0iNDc1IiBkeT0iMCI+QmFieWxvbkpTPC90c3Bhbj48L3RleHQ+PC9nPjxnPjxyZWN0IHg9IjIwMCIgeT0iNTI2IiBmaWxsPSIjZWFlYWVhIiBzdHJva2U9IiM2NjYiIHdpZHRoPSIxNTAiIGhlaWdodD0iNjUiIHJ4PSIzIiByeT0iMyIgY2xhc3M9ImFjdG9yIi8+PHRleHQgeD0iMjc1IiB5PSI1NTguNSIgZG9taW5hbnQtYmFzZWxpbmU9ImNlbnRyYWwiIGFsaWdubWVudC1iYXNlbGluZT0iY2VudHJhbCIgY2xhc3M9ImFjdG9yIiBzdHlsZT0idGV4dC1hbmNob3I6IG1pZGRsZTsgZm9udC1zaXplOiAxNnB4OyBmb250LXdlaWdodDogNDAwOyI+PHRzcGFuIHg9IjI3NSIgZHk9IjAiPk1haW5UaHJlYWQ8L3RzcGFuPjwvdGV4dD48L2c+PGc+PHJlY3QgeD0iMCIgeT0iNTI2IiBmaWxsPSIjZWFlYWVhIiBzdHJva2U9IiM2NjYiIHdpZHRoPSIxNTAiIGhlaWdodD0iNjUiIHJ4PSIzIiByeT0iMyIgY2xhc3M9ImFjdG9yIi8+PHRleHQgeD0iNzUiIHk9IjU1OC41IiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCIgYWxpZ25tZW50LWJhc2VsaW5lPSJjZW50cmFsIiBjbGFzcz0iYWN0b3IiIHN0eWxlPSJ0ZXh0LWFuY2hvcjogbWlkZGxlOyBmb250LXNpemU6IDE2cHg7IGZvbnQtd2VpZ2h0OiA0MDA7Ij48dHNwYW4geD0iNzUiIGR5PSIwIj5FbG08L3RzcGFuPjwvdGV4dD48L2c+PGc+PGxpbmUgaWQ9ImFjdG9yNSIgeDE9IjEwNzgiIHkxPSI1IiB4Mj0iMTA3OCIgeTI9IjUyNiIgY2xhc3M9IjIwMCIgc3Ryb2tlLXdpZHRoPSIwLjVweCIgc3Ryb2tlPSIjOTk5Ii8+PGcgaWQ9InJvb3QtNSI+PHJlY3QgeD0iMTAwMyIgeT0iMCIgZmlsbD0iI2VhZWFlYSIgc3Ryb2tlPSIjNjY2IiB3aWR0aD0iMTUwIiBoZWlnaHQ9IjY1IiByeD0iMyIgcnk9IjMiIGNsYXNzPSJhY3RvciIvPjx0ZXh0IHg9IjEwNzgiIHk9IjMyLjUiIGRvbWluYW50LWJhc2VsaW5lPSJjZW50cmFsIiBhbGlnbm1lbnQtYmFzZWxpbmU9ImNlbnRyYWwiIGNsYXNzPSJhY3RvciIgc3R5bGU9InRleHQtYW5jaG9yOiBtaWRkbGU7IGZvbnQtc2l6ZTogMTZweDsgZm9udC13ZWlnaHQ6IDQwMDsiPjx0c3BhbiB4PSIxMDc4IiBkeT0iMCI+aWRiPC90c3Bhbj48L3RleHQ+PC9nPjwvZz48Zz48bGluZSBpZD0iYWN0b3I0IiB4MT0iODc4IiB5MT0iNSIgeDI9Ijg3OCIgeTI9IjUyNiIgY2xhc3M9IjIwMCIgc3Ryb2tlLXdpZHRoPSIwLjVweCIgc3Ryb2tlPSIjOTk5Ii8+PGcgaWQ9InJvb3QtNCI+PHJlY3QgeD0iODAzIiB5PSIwIiBmaWxsPSIjZWFlYWVhIiBzdHJva2U9IiM2NjYiIHdpZHRoPSIxNTAiIGhlaWdodD0iNjUiIHJ4PSIzIiByeT0iMyIgY2xhc3M9ImFjdG9yIi8+PHRleHQgeD0iODc4IiB5PSIzMi41IiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCIgYWxpZ25tZW50LWJhc2VsaW5lPSJjZW50cmFsIiBjbGFzcz0iYWN0b3IiIHN0eWxlPSJ0ZXh0LWFuY2hvcjogbWlkZGxlOyBmb250LXNpemU6IDE2cHg7IGZvbnQtd2VpZ2h0OiA0MDA7Ij48dHNwYW4geD0iODc4IiBkeT0iMCI+V0FTTTwvdHNwYW4+PC90ZXh0PjwvZz48L2c+PGc+PGxpbmUgaWQ9ImFjdG9yMyIgeDE9IjY3NSIgeTE9IjUiIHgyPSI2NzUiIHkyPSI1MjYiIGNsYXNzPSIyMDAiIHN0cm9rZS13aWR0aD0iMC41cHgiIHN0cm9rZT0iIzk5OSIvPjxnIGlkPSJyb290LTMiPjxyZWN0IHg9IjYwMCIgeT0iMCIgZmlsbD0iI2VhZWFlYSIgc3Ryb2tlPSIjNjY2IiB3aWR0aD0iMTUwIiBoZWlnaHQ9IjY1IiByeD0iMyIgcnk9IjMiIGNsYXNzPSJhY3RvciIvPjx0ZXh0IHg9IjY3NSIgeT0iMzIuNSIgZG9taW5hbnQtYmFzZWxpbmU9ImNlbnRyYWwiIGFsaWdubWVudC1iYXNlbGluZT0iY2VudHJhbCIgY2xhc3M9ImFjdG9yIiBzdHlsZT0idGV4dC1hbmNob3I6IG1pZGRsZTsgZm9udC1zaXplOiAxNnB4OyBmb250LXdlaWdodDogNDAwOyI+PHRzcGFuIHg9IjY3NSIgZHk9IjAiPldlYldvcmtlcjwvdHNwYW4+PC90ZXh0PjwvZz48L2c+PGc+PGxpbmUgaWQ9ImFjdG9yMiIgeDE9IjQ3NSIgeTE9IjUiIHgyPSI0NzUiIHkyPSI1MjYiIGNsYXNzPSIyMDAiIHN0cm9rZS13aWR0aD0iMC41cHgiIHN0cm9rZT0iIzk5OSIvPjxnIGlkPSJyb290LTIiPjxyZWN0IHg9IjQwMCIgeT0iMCIgZmlsbD0iI2VhZWFlYSIgc3Ryb2tlPSIjNjY2IiB3aWR0aD0iMTUwIiBoZWlnaHQ9IjY1IiByeD0iMyIgcnk9IjMiIGNsYXNzPSJhY3RvciIvPjx0ZXh0IHg9IjQ3NSIgeT0iMzIuNSIgZG9taW5hbnQtYmFzZWxpbmU9ImNlbnRyYWwiIGFsaWdubWVudC1iYXNlbGluZT0iY2VudHJhbCIgY2xhc3M9ImFjdG9yIiBzdHlsZT0idGV4dC1hbmNob3I6IG1pZGRsZTsgZm9udC1zaXplOiAxNnB4OyBmb250LXdlaWdodDogNDAwOyI+PHRzcGFuIHg9IjQ3NSIgZHk9IjAiPkJhYnlsb25KUzwvdHNwYW4+PC90ZXh0PjwvZz48L2c+PGc+PGxpbmUgaWQ9ImFjdG9yMSIgeDE9IjI3NSIgeTE9IjUiIHgyPSIyNzUiIHkyPSI1MjYiIGNsYXNzPSIyMDAiIHN0cm9rZS13aWR0aD0iMC41cHgiIHN0cm9rZT0iIzk5OSIvPjxnIGlkPSJyb290LTEiPjxyZWN0IHg9IjIwMCIgeT0iMCIgZmlsbD0iI2VhZWFlYSIgc3Ryb2tlPSIjNjY2IiB3aWR0aD0iMTUwIiBoZWlnaHQ9IjY1IiByeD0iMyIgcnk9IjMiIGNsYXNzPSJhY3RvciIvPjx0ZXh0IHg9IjI3NSIgeT0iMzIuNSIgZG9taW5hbnQtYmFzZWxpbmU9ImNlbnRyYWwiIGFsaWdubWVudC1iYXNlbGluZT0iY2VudHJhbCIgY2xhc3M9ImFjdG9yIiBzdHlsZT0idGV4dC1hbmNob3I6IG1pZGRsZTsgZm9udC1zaXplOiAxNnB4OyBmb250LXdlaWdodDogNDAwOyI+PHRzcGFuIHg9IjI3NSIgZHk9IjAiPk1haW5UaHJlYWQ8L3RzcGFuPjwvdGV4dD48L2c+PC9nPjxnPjxsaW5lIGlkPSJhY3RvcjAiIHgxPSI3NSIgeTE9IjUiIHgyPSI3NSIgeTI9IjUyNiIgY2xhc3M9IjIwMCIgc3Ryb2tlLXdpZHRoPSIwLjVweCIgc3Ryb2tlPSIjOTk5Ii8+PGcgaWQ9InJvb3QtMCI+PHJlY3QgeD0iMCIgeT0iMCIgZmlsbD0iI2VhZWFlYSIgc3Ryb2tlPSIjNjY2IiB3aWR0aD0iMTUwIiBoZWlnaHQ9IjY1IiByeD0iMyIgcnk9IjMiIGNsYXNzPSJhY3RvciIvPjx0ZXh0IHg9Ijc1IiB5PSIzMi41IiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCIgYWxpZ25tZW50LWJhc2VsaW5lPSJjZW50cmFsIiBjbGFzcz0iYWN0b3IiIHN0eWxlPSJ0ZXh0LWFuY2hvcjogbWlkZGxlOyBmb250LXNpemU6IDE2cHg7IGZvbnQtd2VpZ2h0OiA0MDA7Ij48dHNwYW4geD0iNzUiIGR5PSIwIj5FbG08L3RzcGFuPjwvdGV4dD48L2c+PC9nPjxzdHlsZT4jbWVybWFpZC1zdmd7Zm9udC1mYW1pbHk6InRyZWJ1Y2hldCBtcyIsdmVyZGFuYSxhcmlhbCxzYW5zLXNlcmlmO2ZvbnQtc2l6ZToxNnB4O2ZpbGw6IzMzMzt9I21lcm1haWQtc3ZnIC5lcnJvci1pY29ue2ZpbGw6IzU1MjIyMjt9I21lcm1haWQtc3ZnIC5lcnJvci10ZXh0e2ZpbGw6IzU1MjIyMjtzdHJva2U6IzU1MjIyMjt9I21lcm1haWQtc3ZnIC5lZGdlLXRoaWNrbmVzcy1ub3JtYWx7c3Ryb2tlLXdpZHRoOjJweDt9I21lcm1haWQtc3ZnIC5lZGdlLXRoaWNrbmVzcy10aGlja3tzdHJva2Utd2lkdGg6My41cHg7fSNtZXJtYWlkLXN2ZyAuZWRnZS1wYXR0ZXJuLXNvbGlke3N0cm9rZS1kYXNoYXJyYXk6MDt9I21lcm1haWQtc3ZnIC5lZGdlLXBhdHRlcm4tZGFzaGVke3N0cm9rZS1kYXNoYXJyYXk6Mzt9I21lcm1haWQtc3ZnIC5lZGdlLXBhdHRlcm4tZG90dGVke3N0cm9rZS1kYXNoYXJyYXk6Mjt9I21lcm1haWQtc3ZnIC5tYXJrZXJ7ZmlsbDojMzMzMzMzO3N0cm9rZTojMzMzMzMzO30jbWVybWFpZC1zdmcgLm1hcmtlci5jcm9zc3tzdHJva2U6IzMzMzMzMzt9I21lcm1haWQtc3ZnIHN2Z3tmb250LWZhbWlseToidHJlYnVjaGV0IG1zIix2ZXJkYW5hLGFyaWFsLHNhbnMtc2VyaWY7Zm9udC1zaXplOjE2cHg7fSNtZXJtYWlkLXN2ZyAuYWN0b3J7c3Ryb2tlOmhzbCgyNTkuNjI2MTY4MjI0MywgNTkuNzc2NTM2MzEyOCUsIDg3LjkwMTk2MDc4NDMlKTtmaWxsOiNFQ0VDRkY7fSNtZXJtYWlkLXN2ZyB0ZXh0LmFjdG9yJmd0O3RzcGFue2ZpbGw6YmxhY2s7c3Ryb2tlOm5vbmU7fSNtZXJtYWlkLXN2ZyAuYWN0b3ItbGluZXtzdHJva2U6Z3JleTt9I21lcm1haWQtc3ZnIC5tZXNzYWdlTGluZTB7c3Ryb2tlLXdpZHRoOjEuNTtzdHJva2UtZGFzaGFycmF5Om5vbmU7c3Ryb2tlOiMzMzM7fSNtZXJtYWlkLXN2ZyAubWVzc2FnZUxpbmUxe3N0cm9rZS13aWR0aDoxLjU7c3Ryb2tlLWRhc2hhcnJheToyLDI7c3Ryb2tlOiMzMzM7fSNtZXJtYWlkLXN2ZyAjYXJyb3doZWFkIHBhdGh7ZmlsbDojMzMzO3N0cm9rZTojMzMzO30jbWVybWFpZC1zdmcgLnNlcXVlbmNlTnVtYmVye2ZpbGw6d2hpdGU7fSNtZXJtYWlkLXN2ZyAjc2VxdWVuY2VudW1iZXJ7ZmlsbDojMzMzO30jbWVybWFpZC1zdmcgI2Nyb3NzaGVhZCBwYXRoe2ZpbGw6IzMzMztzdHJva2U6IzMzMzt9I21lcm1haWQtc3ZnIC5tZXNzYWdlVGV4dHtmaWxsOiMzMzM7c3Ryb2tlOm5vbmU7fSNtZXJtYWlkLXN2ZyAubGFiZWxCb3h7c3Ryb2tlOmhzbCgyNTkuNjI2MTY4MjI0MywgNTkuNzc2NTM2MzEyOCUsIDg3LjkwMTk2MDc4NDMlKTtmaWxsOiNFQ0VDRkY7fSNtZXJtYWlkLXN2ZyAubGFiZWxUZXh0LCNtZXJtYWlkLXN2ZyAubGFiZWxUZXh0Jmd0O3RzcGFue2ZpbGw6YmxhY2s7c3Ryb2tlOm5vbmU7fSNtZXJtYWlkLXN2ZyAubG9vcFRleHQsI21lcm1haWQtc3ZnIC5sb29wVGV4dCZndDt0c3BhbntmaWxsOmJsYWNrO3N0cm9rZTpub25lO30jbWVybWFpZC1zdmcgLmxvb3BMaW5le3N0cm9rZS13aWR0aDoycHg7c3Ryb2tlLWRhc2hhcnJheToyLDI7c3Ryb2tlOmhzbCgyNTkuNjI2MTY4MjI0MywgNTkuNzc2NTM2MzEyOCUsIDg3LjkwMTk2MDc4NDMlKTtmaWxsOmhzbCgyNTkuNjI2MTY4MjI0MywgNTkuNzc2NTM2MzEyOCUsIDg3LjkwMTk2MDc4NDMlKTt9I21lcm1haWQtc3ZnIC5ub3Rle3N0cm9rZTojYWFhYTMzO2ZpbGw6I2ZmZjVhZDt9I21lcm1haWQtc3ZnIC5ub3RlVGV4dCwjbWVybWFpZC1zdmcgLm5vdGVUZXh0Jmd0O3RzcGFue2ZpbGw6YmxhY2s7c3Ryb2tlOm5vbmU7fSNtZXJtYWlkLXN2ZyAuYWN0aXZhdGlvbjB7ZmlsbDojZjRmNGY0O3N0cm9rZTojNjY2O30jbWVybWFpZC1zdmcgLmFjdGl2YXRpb24xe2ZpbGw6I2Y0ZjRmNDtzdHJva2U6IzY2Njt9I21lcm1haWQtc3ZnIC5hY3RpdmF0aW9uMntmaWxsOiNmNGY0ZjQ7c3Ryb2tlOiM2NjY7fSNtZXJtYWlkLXN2ZyAuYWN0b3JQb3B1cE1lbnV7cG9zaXRpb246YWJzb2x1dGU7fSNtZXJtYWlkLXN2ZyAuYWN0b3JQb3B1cE1lbnVQYW5lbHtwb3NpdGlvbjphYnNvbHV0ZTtmaWxsOiNFQ0VDRkY7Ym94LXNoYWRvdzowcHggOHB4IDE2cHggMHB4IHJnYmEoMCwwLDAsMC4yKTtmaWx0ZXI6ZHJvcC1zaGFkb3coM3B4IDVweCAycHggcmdiKDAgMCAwIC8gMC40KSk7fSNtZXJtYWlkLXN2ZyAuYWN0b3ItbWFuIGxpbmV7c3Ryb2tlOmhzbCgyNTkuNjI2MTY4MjI0MywgNTkuNzc2NTM2MzEyOCUsIDg3LjkwMTk2MDc4NDMlKTtmaWxsOiNFQ0VDRkY7fSNtZXJtYWlkLXN2ZyAuYWN0b3ItbWFuIGNpcmNsZSwjbWVybWFpZC1zdmcgbGluZXtzdHJva2U6aHNsKDI1OS42MjYxNjgyMjQzLCA1OS43NzY1MzYzMTI4JSwgODcuOTAxOTYwNzg0MyUpO2ZpbGw6I0VDRUNGRjtzdHJva2Utd2lkdGg6MnB4O30jbWVybWFpZC1zdmcgOnJvb3R7LS1tZXJtYWlkLWZvbnQtZmFtaWx5OiJ0cmVidWNoZXQgbXMiLHZlcmRhbmEsYXJpYWwsc2Fucy1zZXJpZjt9PC9zdHlsZT48Zy8+PGRlZnM+PHN5bWJvbCBpZD0iY29tcHV0ZXIiIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCI+PHBhdGggdHJhbnNmb3JtPSJzY2FsZSguNSkiIGQ9Ik0yIDJ2MTNoMjB2LTEzaC0yMHptMTggMTFoLTE2di05aDE2djl6bS0xMC4yMjggNmwuNDY2LTFoMy41MjRsLjQ2NyAxaC00LjQ1N3ptMTQuMjI4IDNoLTI0bDItNmgyLjEwNGwtMS4zMyA0aDE4LjQ1bC0xLjI5Ny00aDIuMDczbDIgNnptLTUtMTBoLTE0di03aDE0djd6Ii8+PC9zeW1ib2w+PC9kZWZzPjxkZWZzPjxzeW1ib2wgaWQ9ImRhdGFiYXNlIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGNsaXAtcnVsZT0iZXZlbm9kZCI+PHBhdGggdHJhbnNmb3JtPSJzY2FsZSguNSkiIGQ9Ik0xMi4yNTguMDAxbC4yNTYuMDA0LjI1NS4wMDUuMjUzLjAwOC4yNTEuMDEuMjQ5LjAxMi4yNDcuMDE1LjI0Ni4wMTYuMjQyLjAxOS4yNDEuMDIuMjM5LjAyMy4yMzYuMDI0LjIzMy4wMjcuMjMxLjAyOC4yMjkuMDMxLjIyNS4wMzIuMjIzLjAzNC4yMi4wMzYuMjE3LjAzOC4yMTQuMDQuMjExLjA0MS4yMDguMDQzLjIwNS4wNDUuMjAxLjA0Ni4xOTguMDQ4LjE5NC4wNS4xOTEuMDUxLjE4Ny4wNTMuMTgzLjA1NC4xOC4wNTYuMTc1LjA1Ny4xNzIuMDU5LjE2OC4wNi4xNjMuMDYxLjE2LjA2My4xNTUuMDY0LjE1LjA2Ni4wNzQuMDMzLjA3My4wMzMuMDcxLjAzNC4wNy4wMzQuMDY5LjAzNS4wNjguMDM1LjA2Ny4wMzUuMDY2LjAzNS4wNjQuMDM2LjA2NC4wMzYuMDYyLjAzNi4wNi4wMzYuMDYuMDM3LjA1OC4wMzcuMDU4LjAzNy4wNTUuMDM4LjA1NS4wMzguMDUzLjAzOC4wNTIuMDM4LjA1MS4wMzkuMDUuMDM5LjA0OC4wMzkuMDQ3LjAzOS4wNDUuMDQuMDQ0LjA0LjA0My4wNC4wNDEuMDQuMDQuMDQxLjAzOS4wNDEuMDM3LjA0MS4wMzYuMDQxLjAzNC4wNDEuMDMzLjA0Mi4wMzIuMDQyLjAzLjA0Mi4wMjkuMDQyLjAyNy4wNDIuMDI2LjA0My4wMjQuMDQzLjAyMy4wNDMuMDIxLjA0My4wMi4wNDMuMDE4LjA0NC4wMTcuMDQzLjAxNS4wNDQuMDEzLjA0NC4wMTIuMDQ0LjAxMS4wNDUuMDA5LjA0NC4wMDcuMDQ1LjAwNi4wNDUuMDA0LjA0NS4wMDIuMDQ1LjAwMS4wNDV2MTdsLS4wMDEuMDQ1LS4wMDIuMDQ1LS4wMDQuMDQ1LS4wMDYuMDQ1LS4wMDcuMDQ1LS4wMDkuMDQ0LS4wMTEuMDQ1LS4wMTIuMDQ0LS4wMTMuMDQ0LS4wMTUuMDQ0LS4wMTcuMDQzLS4wMTguMDQ0LS4wMi4wNDMtLjAyMS4wNDMtLjAyMy4wNDMtLjAyNC4wNDMtLjAyNi4wNDMtLjAyNy4wNDItLjAyOS4wNDItLjAzLjA0Mi0uMDMyLjA0Mi0uMDMzLjA0Mi0uMDM0LjA0MS0uMDM2LjA0MS0uMDM3LjA0MS0uMDM5LjA0MS0uMDQuMDQxLS4wNDEuMDQtLjA0My4wNC0uMDQ0LjA0LS4wNDUuMDQtLjA0Ny4wMzktLjA0OC4wMzktLjA1LjAzOS0uMDUxLjAzOS0uMDUyLjAzOC0uMDUzLjAzOC0uMDU1LjAzOC0uMDU1LjAzOC0uMDU4LjAzNy0uMDU4LjAzNy0uMDYuMDM3LS4wNi4wMzYtLjA2Mi4wMzYtLjA2NC4wMzYtLjA2NC4wMzYtLjA2Ni4wMzUtLjA2Ny4wMzUtLjA2OC4wMzUtLjA2OS4wMzUtLjA3LjAzNC0uMDcxLjAzNC0uMDczLjAzMy0uMDc0LjAzMy0uMTUuMDY2LS4xNTUuMDY0LS4xNi4wNjMtLjE2My4wNjEtLjE2OC4wNi0uMTcyLjA1OS0uMTc1LjA1Ny0uMTguMDU2LS4xODMuMDU0LS4xODcuMDUzLS4xOTEuMDUxLS4xOTQuMDUtLjE5OC4wNDgtLjIwMS4wNDYtLjIwNS4wNDUtLjIwOC4wNDMtLjIxMS4wNDEtLjIxNC4wNC0uMjE3LjAzOC0uMjIuMDM2LS4yMjMuMDM0LS4yMjUuMDMyLS4yMjkuMDMxLS4yMzEuMDI4LS4yMzMuMDI3LS4yMzYuMDI0LS4yMzkuMDIzLS4yNDEuMDItLjI0Mi4wMTktLjI0Ni4wMTYtLjI0Ny4wMTUtLjI0OS4wMTItLjI1MS4wMS0uMjUzLjAwOC0uMjU1LjAwNS0uMjU2LjAwNC0uMjU4LjAwMS0uMjU4LS4wMDEtLjI1Ni0uMDA0LS4yNTUtLjAwNS0uMjUzLS4wMDgtLjI1MS0uMDEtLjI0OS0uMDEyLS4yNDctLjAxNS0uMjQ1LS4wMTYtLjI0My0uMDE5LS4yNDEtLjAyLS4yMzgtLjAyMy0uMjM2LS4wMjQtLjIzNC0uMDI3LS4yMzEtLjAyOC0uMjI4LS4wMzEtLjIyNi0uMDMyLS4yMjMtLjAzNC0uMjItLjAzNi0uMjE3LS4wMzgtLjIxNC0uMDQtLjIxMS0uMDQxLS4yMDgtLjA0My0uMjA0LS4wNDUtLjIwMS0uMDQ2LS4xOTgtLjA0OC0uMTk1LS4wNS0uMTktLjA1MS0uMTg3LS4wNTMtLjE4NC0uMDU0LS4xNzktLjA1Ni0uMTc2LS4wNTctLjE3Mi0uMDU5LS4xNjctLjA2LS4xNjQtLjA2MS0uMTU5LS4wNjMtLjE1NS0uMDY0LS4xNTEtLjA2Ni0uMDc0LS4wMzMtLjA3Mi0uMDMzLS4wNzItLjAzNC0uMDctLjAzNC0uMDY5LS4wMzUtLjA2OC0uMDM1LS4wNjctLjAzNS0uMDY2LS4wMzUtLjA2NC0uMDM2LS4wNjMtLjAzNi0uMDYyLS4wMzYtLjA2MS0uMDM2LS4wNi0uMDM3LS4wNTgtLjAzNy0uMDU3LS4wMzctLjA1Ni0uMDM4LS4wNTUtLjAzOC0uMDUzLS4wMzgtLjA1Mi0uMDM4LS4wNTEtLjAzOS0uMDQ5LS4wMzktLjA0OS0uMDM5LS4wNDYtLjAzOS0uMDQ2LS4wNC0uMDQ0LS4wNC0uMDQzLS4wNC0uMDQxLS4wNC0uMDQtLjA0MS0uMDM5LS4wNDEtLjAzNy0uMDQxLS4wMzYtLjA0MS0uMDM0LS4wNDEtLjAzMy0uMDQyLS4wMzItLjA0Mi0uMDMtLjA0Mi0uMDI5LS4wNDItLjAyNy0uMDQyLS4wMjYtLjA0My0uMDI0LS4wNDMtLjAyMy0uMDQzLS4wMjEtLjA0My0uMDItLjA0My0uMDE4LS4wNDQtLjAxNy0uMDQzLS4wMTUtLjA0NC0uMDEzLS4wNDQtLjAxMi0uMDQ0LS4wMTEtLjA0NS0uMDA5LS4wNDQtLjAwNy0uMDQ1LS4wMDYtLjA0NS0uMDA0LS4wNDUtLjAwMi0uMDQ1LS4wMDEtLjA0NXYtMTdsLjAwMS0uMDQ1LjAwMi0uMDQ1LjAwNC0uMDQ1LjAwNi0uMDQ1LjAwNy0uMDQ1LjAwOS0uMDQ0LjAxMS0uMDQ1LjAxMi0uMDQ0LjAxMy0uMDQ0LjAxNS0uMDQ0LjAxNy0uMDQzLjAxOC0uMDQ0LjAyLS4wNDMuMDIxLS4wNDMuMDIzLS4wNDMuMDI0LS4wNDMuMDI2LS4wNDMuMDI3LS4wNDIuMDI5LS4wNDIuMDMtLjA0Mi4wMzItLjA0Mi4wMzMtLjA0Mi4wMzQtLjA0MS4wMzYtLjA0MS4wMzctLjA0MS4wMzktLjA0MS4wNC0uMDQxLjA0MS0uMDQuMDQzLS4wNC4wNDQtLjA0LjA0Ni0uMDQuMDQ2LS4wMzkuMDQ5LS4wMzkuMDQ5LS4wMzkuMDUxLS4wMzkuMDUyLS4wMzguMDUzLS4wMzguMDU1LS4wMzguMDU2LS4wMzguMDU3LS4wMzcuMDU4LS4wMzcuMDYtLjAzNy4wNjEtLjAzNi4wNjItLjAzNi4wNjMtLjAzNi4wNjQtLjAzNi4wNjYtLjAzNS4wNjctLjAzNS4wNjgtLjAzNS4wNjktLjAzNS4wNy0uMDM0LjA3Mi0uMDM0LjA3Mi0uMDMzLjA3NC0uMDMzLjE1MS0uMDY2LjE1NS0uMDY0LjE1OS0uMDYzLjE2NC0uMDYxLjE2Ny0uMDYuMTcyLS4wNTkuMTc2LS4wNTcuMTc5LS4wNTYuMTg0LS4wNTQuMTg3LS4wNTMuMTktLjA1MS4xOTUtLjA1LjE5OC0uMDQ4LjIwMS0uMDQ2LjIwNC0uMDQ1LjIwOC0uMDQzLjIxMS0uMDQxLjIxNC0uMDQuMjE3LS4wMzguMjItLjAzNi4yMjMtLjAzNC4yMjYtLjAzMi4yMjgtLjAzMS4yMzEtLjAyOC4yMzQtLjAyNy4yMzYtLjAyNC4yMzgtLjAyMy4yNDEtLjAyLjI0My0uMDE5LjI0NS0uMDE2LjI0Ny0uMDE1LjI0OS0uMDEyLjI1MS0uMDEuMjUzLS4wMDguMjU1LS4wMDUuMjU2LS4wMDQuMjU4LS4wMDEuMjU4LjAwMXptLTkuMjU4IDIwLjQ5OXYuMDFsLjAwMS4wMjEuMDAzLjAyMS4wMDQuMDIyLjAwNS4wMjEuMDA2LjAyMi4wMDcuMDIyLjAwOS4wMjMuMDEuMDIyLjAxMS4wMjMuMDEyLjAyMy4wMTMuMDIzLjAxNS4wMjMuMDE2LjAyNC4wMTcuMDIzLjAxOC4wMjQuMDE5LjAyNC4wMjEuMDI0LjAyMi4wMjUuMDIzLjAyNC4wMjQuMDI1LjA1Mi4wNDkuMDU2LjA1LjA2MS4wNTEuMDY2LjA1MS4wNy4wNTEuMDc1LjA1MS4wNzkuMDUyLjA4NC4wNTIuMDg4LjA1Mi4wOTIuMDUyLjA5Ny4wNTIuMTAyLjA1MS4xMDUuMDUyLjExLjA1Mi4xMTQuMDUxLjExOS4wNTEuMTIzLjA1MS4xMjcuMDUuMTMxLjA1LjEzNS4wNS4xMzkuMDQ4LjE0NC4wNDkuMTQ3LjA0Ny4xNTIuMDQ3LjE1NS4wNDcuMTYuMDQ1LjE2My4wNDUuMTY3LjA0My4xNzEuMDQzLjE3Ni4wNDEuMTc4LjA0MS4xODMuMDM5LjE4Ny4wMzkuMTkuMDM3LjE5NC4wMzUuMTk3LjAzNS4yMDIuMDMzLjIwNC4wMzEuMjA5LjAzLjIxMi4wMjkuMjE2LjAyNy4yMTkuMDI1LjIyMi4wMjQuMjI2LjAyMS4yMy4wMi4yMzMuMDE4LjIzNi4wMTYuMjQuMDE1LjI0My4wMTIuMjQ2LjAxLjI0OS4wMDguMjUzLjAwNS4yNTYuMDA0LjI1OS4wMDEuMjYtLjAwMS4yNTctLjAwNC4yNTQtLjAwNS4yNS0uMDA4LjI0Ny0uMDExLjI0NC0uMDEyLjI0MS0uMDE0LjIzNy0uMDE2LjIzMy0uMDE4LjIzMS0uMDIxLjIyNi0uMDIxLjIyNC0uMDI0LjIyLS4wMjYuMjE2LS4wMjcuMjEyLS4wMjguMjEtLjAzMS4yMDUtLjAzMS4yMDItLjAzNC4xOTgtLjAzNC4xOTQtLjAzNi4xOTEtLjAzNy4xODctLjAzOS4xODMtLjA0LjE3OS0uMDQuMTc1LS4wNDIuMTcyLS4wNDMuMTY4LS4wNDQuMTYzLS4wNDUuMTYtLjA0Ni4xNTUtLjA0Ni4xNTItLjA0Ny4xNDgtLjA0OC4xNDMtLjA0OS4xMzktLjA0OS4xMzYtLjA1LjEzMS0uMDUuMTI2LS4wNS4xMjMtLjA1MS4xMTgtLjA1Mi4xMTQtLjA1MS4xMS0uMDUyLjEwNi0uMDUyLjEwMS0uMDUyLjA5Ni0uMDUyLjA5Mi0uMDUyLjA4OC0uMDUzLjA4My0uMDUxLjA3OS0uMDUyLjA3NC0uMDUyLjA3LS4wNTEuMDY1LS4wNTEuMDYtLjA1MS4wNTYtLjA1LjA1MS0uMDUuMDIzLS4wMjQuMDIzLS4wMjUuMDIxLS4wMjQuMDItLjAyNC4wMTktLjAyNC4wMTgtLjAyNC4wMTctLjAyNC4wMTUtLjAyMy4wMTQtLjAyNC4wMTMtLjAyMy4wMTItLjAyMy4wMS0uMDIzLjAxLS4wMjIuMDA4LS4wMjIuMDA2LS4wMjIuMDA2LS4wMjIuMDA0LS4wMjIuMDA0LS4wMjEuMDAxLS4wMjEuMDAxLS4wMjF2LTQuMTI3bC0uMDc3LjA1NS0uMDguMDUzLS4wODMuMDU0LS4wODUuMDUzLS4wODcuMDUyLS4wOS4wNTItLjA5My4wNTEtLjA5NS4wNS0uMDk3LjA1LS4xLjA0OS0uMTAyLjA0OS0uMTA1LjA0OC0uMTA2LjA0Ny0uMTA5LjA0Ny0uMTExLjA0Ni0uMTE0LjA0NS0uMTE1LjA0NS0uMTE4LjA0NC0uMTIuMDQzLS4xMjIuMDQyLS4xMjQuMDQyLS4xMjYuMDQxLS4xMjguMDQtLjEzLjA0LS4xMzIuMDM4LS4xMzQuMDM4LS4xMzUuMDM3LS4xMzguMDM3LS4xMzkuMDM1LS4xNDIuMDM1LS4xNDMuMDM0LS4xNDQuMDMzLS4xNDcuMDMyLS4xNDguMDMxLS4xNS4wMy0uMTUxLjAzLS4xNTMuMDI5LS4xNTQuMDI3LS4xNTYuMDI3LS4xNTguMDI2LS4xNTkuMDI1LS4xNjEuMDI0LS4xNjIuMDIzLS4xNjMuMDIyLS4xNjUuMDIxLS4xNjYuMDItLjE2Ny4wMTktLjE2OS4wMTgtLjE2OS4wMTctLjE3MS4wMTYtLjE3My4wMTUtLjE3My4wMTQtLjE3NS4wMTMtLjE3NS4wMTItLjE3Ny4wMTEtLjE3OC4wMS0uMTc5LjAwOC0uMTc5LjAwOC0uMTgxLjAwNi0uMTgyLjAwNS0uMTgyLjAwNC0uMTg0LjAwMy0uMTg0LjAwMmgtLjM3bC0uMTg0LS4wMDItLjE4NC0uMDAzLS4xODItLjAwNC0uMTgyLS4wMDUtLjE4MS0uMDA2LS4xNzktLjAwOC0uMTc5LS4wMDgtLjE3OC0uMDEtLjE3Ni0uMDExLS4xNzYtLjAxMi0uMTc1LS4wMTMtLjE3My0uMDE0LS4xNzItLjAxNS0uMTcxLS4wMTYtLjE3LS4wMTctLjE2OS0uMDE4LS4xNjctLjAxOS0uMTY2LS4wMi0uMTY1LS4wMjEtLjE2My0uMDIyLS4xNjItLjAyMy0uMTYxLS4wMjQtLjE1OS0uMDI1LS4xNTctLjAyNi0uMTU2LS4wMjctLjE1NS0uMDI3LS4xNTMtLjAyOS0uMTUxLS4wMy0uMTUtLjAzLS4xNDgtLjAzMS0uMTQ2LS4wMzItLjE0NS0uMDMzLS4xNDMtLjAzNC0uMTQxLS4wMzUtLjE0LS4wMzUtLjEzNy0uMDM3LS4xMzYtLjAzNy0uMTM0LS4wMzgtLjEzMi0uMDM4LS4xMy0uMDQtLjEyOC0uMDQtLjEyNi0uMDQxLS4xMjQtLjA0Mi0uMTIyLS4wNDItLjEyLS4wNDQtLjExNy0uMDQzLS4xMTYtLjA0NS0uMTEzLS4wNDUtLjExMi0uMDQ2LS4xMDktLjA0Ny0uMTA2LS4wNDctLjEwNS0uMDQ4LS4xMDItLjA0OS0uMS0uMDQ5LS4wOTctLjA1LS4wOTUtLjA1LS4wOTMtLjA1Mi0uMDktLjA1MS0uMDg3LS4wNTItLjA4NS0uMDUzLS4wODMtLjA1NC0uMDgtLjA1NC0uMDc3LS4wNTR2NC4xMjd6bTAtNS42NTR2LjAxMWwuMDAxLjAyMS4wMDMuMDIxLjAwNC4wMjEuMDA1LjAyMi4wMDYuMDIyLjAwNy4wMjIuMDA5LjAyMi4wMS4wMjIuMDExLjAyMy4wMTIuMDIzLjAxMy4wMjMuMDE1LjAyNC4wMTYuMDIzLjAxNy4wMjQuMDE4LjAyNC4wMTkuMDI0LjAyMS4wMjQuMDIyLjAyNC4wMjMuMDI1LjAyNC4wMjQuMDUyLjA1LjA1Ni4wNS4wNjEuMDUuMDY2LjA1MS4wNy4wNTEuMDc1LjA1Mi4wNzkuMDUxLjA4NC4wNTIuMDg4LjA1Mi4wOTIuMDUyLjA5Ny4wNTIuMTAyLjA1Mi4xMDUuMDUyLjExLjA1MS4xMTQuMDUxLjExOS4wNTIuMTIzLjA1LjEyNy4wNTEuMTMxLjA1LjEzNS4wNDkuMTM5LjA0OS4xNDQuMDQ4LjE0Ny4wNDguMTUyLjA0Ny4xNTUuMDQ2LjE2LjA0NS4xNjMuMDQ1LjE2Ny4wNDQuMTcxLjA0Mi4xNzYuMDQyLjE3OC4wNC4xODMuMDQuMTg3LjAzOC4xOS4wMzcuMTk0LjAzNi4xOTcuMDM0LjIwMi4wMzMuMjA0LjAzMi4yMDkuMDMuMjEyLjAyOC4yMTYuMDI3LjIxOS4wMjUuMjIyLjAyNC4yMjYuMDIyLjIzLjAyLjIzMy4wMTguMjM2LjAxNi4yNC4wMTQuMjQzLjAxMi4yNDYuMDEuMjQ5LjAwOC4yNTMuMDA2LjI1Ni4wMDMuMjU5LjAwMS4yNi0uMDAxLjI1Ny0uMDAzLjI1NC0uMDA2LjI1LS4wMDguMjQ3LS4wMS4yNDQtLjAxMi4yNDEtLjAxNS4yMzctLjAxNi4yMzMtLjAxOC4yMzEtLjAyLjIyNi0uMDIyLjIyNC0uMDI0LjIyLS4wMjUuMjE2LS4wMjcuMjEyLS4wMjkuMjEtLjAzLjIwNS0uMDMyLjIwMi0uMDMzLjE5OC0uMDM1LjE5NC0uMDM2LjE5MS0uMDM3LjE4Ny0uMDM5LjE4My0uMDM5LjE3OS0uMDQxLjE3NS0uMDQyLjE3Mi0uMDQzLjE2OC0uMDQ0LjE2My0uMDQ1LjE2LS4wNDUuMTU1LS4wNDcuMTUyLS4wNDcuMTQ4LS4wNDguMTQzLS4wNDguMTM5LS4wNS4xMzYtLjA0OS4xMzEtLjA1LjEyNi0uMDUxLjEyMy0uMDUxLjExOC0uMDUxLjExNC0uMDUyLjExLS4wNTIuMTA2LS4wNTIuMTAxLS4wNTIuMDk2LS4wNTIuMDkyLS4wNTIuMDg4LS4wNTIuMDgzLS4wNTIuMDc5LS4wNTIuMDc0LS4wNTEuMDctLjA1Mi4wNjUtLjA1MS4wNi0uMDUuMDU2LS4wNTEuMDUxLS4wNDkuMDIzLS4wMjUuMDIzLS4wMjQuMDIxLS4wMjUuMDItLjAyNC4wMTktLjAyNC4wMTgtLjAyNC4wMTctLjAyNC4wMTUtLjAyMy4wMTQtLjAyMy4wMTMtLjAyNC4wMTItLjAyMi4wMS0uMDIzLjAxLS4wMjMuMDA4LS4wMjIuMDA2LS4wMjIuMDA2LS4wMjIuMDA0LS4wMjEuMDA0LS4wMjIuMDAxLS4wMjEuMDAxLS4wMjF2LTQuMTM5bC0uMDc3LjA1NC0uMDguMDU0LS4wODMuMDU0LS4wODUuMDUyLS4wODcuMDUzLS4wOS4wNTEtLjA5My4wNTEtLjA5NS4wNTEtLjA5Ny4wNS0uMS4wNDktLjEwMi4wNDktLjEwNS4wNDgtLjEwNi4wNDctLjEwOS4wNDctLjExMS4wNDYtLjExNC4wNDUtLjExNS4wNDQtLjExOC4wNDQtLjEyLjA0NC0uMTIyLjA0Mi0uMTI0LjA0Mi0uMTI2LjA0MS0uMTI4LjA0LS4xMy4wMzktLjEzMi4wMzktLjEzNC4wMzgtLjEzNS4wMzctLjEzOC4wMzYtLjEzOS4wMzYtLjE0Mi4wMzUtLjE0My4wMzMtLjE0NC4wMzMtLjE0Ny4wMzMtLjE0OC4wMzEtLjE1LjAzLS4xNTEuMDMtLjE1My4wMjgtLjE1NC4wMjgtLjE1Ni4wMjctLjE1OC4wMjYtLjE1OS4wMjUtLjE2MS4wMjQtLjE2Mi4wMjMtLjE2My4wMjItLjE2NS4wMjEtLjE2Ni4wMi0uMTY3LjAxOS0uMTY5LjAxOC0uMTY5LjAxNy0uMTcxLjAxNi0uMTczLjAxNS0uMTczLjAxNC0uMTc1LjAxMy0uMTc1LjAxMi0uMTc3LjAxMS0uMTc4LjAwOS0uMTc5LjAwOS0uMTc5LjAwNy0uMTgxLjAwNy0uMTgyLjAwNS0uMTgyLjAwNC0uMTg0LjAwMy0uMTg0LjAwMmgtLjM3bC0uMTg0LS4wMDItLjE4NC0uMDAzLS4xODItLjAwNC0uMTgyLS4wMDUtLjE4MS0uMDA3LS4xNzktLjAwNy0uMTc5LS4wMDktLjE3OC0uMDA5LS4xNzYtLjAxMS0uMTc2LS4wMTItLjE3NS0uMDEzLS4xNzMtLjAxNC0uMTcyLS4wMTUtLjE3MS0uMDE2LS4xNy0uMDE3LS4xNjktLjAxOC0uMTY3LS4wMTktLjE2Ni0uMDItLjE2NS0uMDIxLS4xNjMtLjAyMi0uMTYyLS4wMjMtLjE2MS0uMDI0LS4xNTktLjAyNS0uMTU3LS4wMjYtLjE1Ni0uMDI3LS4xNTUtLjAyOC0uMTUzLS4wMjgtLjE1MS0uMDMtLjE1LS4wMy0uMTQ4LS4wMzEtLjE0Ni0uMDMzLS4xNDUtLjAzMy0uMTQzLS4wMzMtLjE0MS0uMDM1LS4xNC0uMDM2LS4xMzctLjAzNi0uMTM2LS4wMzctLjEzNC0uMDM4LS4xMzItLjAzOS0uMTMtLjAzOS0uMTI4LS4wNC0uMTI2LS4wNDEtLjEyNC0uMDQyLS4xMjItLjA0My0uMTItLjA0My0uMTE3LS4wNDQtLjExNi0uMDQ0LS4xMTMtLjA0Ni0uMTEyLS4wNDYtLjEwOS0uMDQ2LS4xMDYtLjA0Ny0uMTA1LS4wNDgtLjEwMi0uMDQ5LS4xLS4wNDktLjA5Ny0uMDUtLjA5NS0uMDUxLS4wOTMtLjA1MS0uMDktLjA1MS0uMDg3LS4wNTMtLjA4NS0uMDUyLS4wODMtLjA1NC0uMDgtLjA1NC0uMDc3LS4wNTR2NC4xMzl6bTAtNS42NjZ2LjAxMWwuMDAxLjAyLjAwMy4wMjIuMDA0LjAyMS4wMDUuMDIyLjAwNi4wMjEuMDA3LjAyMi4wMDkuMDIzLjAxLjAyMi4wMTEuMDIzLjAxMi4wMjMuMDEzLjAyMy4wMTUuMDIzLjAxNi4wMjQuMDE3LjAyNC4wMTguMDIzLjAxOS4wMjQuMDIxLjAyNS4wMjIuMDI0LjAyMy4wMjQuMDI0LjAyNS4wNTIuMDUuMDU2LjA1LjA2MS4wNS4wNjYuMDUxLjA3LjA1MS4wNzUuMDUyLjA3OS4wNTEuMDg0LjA1Mi4wODguMDUyLjA5Mi4wNTIuMDk3LjA1Mi4xMDIuMDUyLjEwNS4wNTEuMTEuMDUyLjExNC4wNTEuMTE5LjA1MS4xMjMuMDUxLjEyNy4wNS4xMzEuMDUuMTM1LjA1LjEzOS4wNDkuMTQ0LjA0OC4xNDcuMDQ4LjE1Mi4wNDcuMTU1LjA0Ni4xNi4wNDUuMTYzLjA0NS4xNjcuMDQzLjE3MS4wNDMuMTc2LjA0Mi4xNzguMDQuMTgzLjA0LjE4Ny4wMzguMTkuMDM3LjE5NC4wMzYuMTk3LjAzNC4yMDIuMDMzLjIwNC4wMzIuMjA5LjAzLjIxMi4wMjguMjE2LjAyNy4yMTkuMDI1LjIyMi4wMjQuMjI2LjAyMS4yMy4wMi4yMzMuMDE4LjIzNi4wMTcuMjQuMDE0LjI0My4wMTIuMjQ2LjAxLjI0OS4wMDguMjUzLjAwNi4yNTYuMDAzLjI1OS4wMDEuMjYtLjAwMS4yNTctLjAwMy4yNTQtLjAwNi4yNS0uMDA4LjI0Ny0uMDEuMjQ0LS4wMTMuMjQxLS4wMTQuMjM3LS4wMTYuMjMzLS4wMTguMjMxLS4wMi4yMjYtLjAyMi4yMjQtLjAyNC4yMi0uMDI1LjIxNi0uMDI3LjIxMi0uMDI5LjIxLS4wMy4yMDUtLjAzMi4yMDItLjAzMy4xOTgtLjAzNS4xOTQtLjAzNi4xOTEtLjAzNy4xODctLjAzOS4xODMtLjAzOS4xNzktLjA0MS4xNzUtLjA0Mi4xNzItLjA0My4xNjgtLjA0NC4xNjMtLjA0NS4xNi0uMDQ1LjE1NS0uMDQ3LjE1Mi0uMDQ3LjE0OC0uMDQ4LjE0My0uMDQ5LjEzOS0uMDQ5LjEzNi0uMDQ5LjEzMS0uMDUxLjEyNi0uMDUuMTIzLS4wNTEuMTE4LS4wNTIuMTE0LS4wNTEuMTEtLjA1Mi4xMDYtLjA1Mi4xMDEtLjA1Mi4wOTYtLjA1Mi4wOTItLjA1Mi4wODgtLjA1Mi4wODMtLjA1Mi4wNzktLjA1Mi4wNzQtLjA1Mi4wNy0uMDUxLjA2NS0uMDUxLjA2LS4wNTEuMDU2LS4wNS4wNTEtLjA0OS4wMjMtLjAyNS4wMjMtLjAyNS4wMjEtLjAyNC4wMi0uMDI0LjAxOS0uMDI0LjAxOC0uMDI0LjAxNy0uMDI0LjAxNS0uMDIzLjAxNC0uMDI0LjAxMy0uMDIzLjAxMi0uMDIzLjAxLS4wMjIuMDEtLjAyMy4wMDgtLjAyMi4wMDYtLjAyMi4wMDYtLjAyMi4wMDQtLjAyMi4wMDQtLjAyMS4wMDEtLjAyMS4wMDEtLjAyMXYtNC4xNTNsLS4wNzcuMDU0LS4wOC4wNTQtLjA4My4wNTMtLjA4NS4wNTMtLjA4Ny4wNTMtLjA5LjA1MS0uMDkzLjA1MS0uMDk1LjA1MS0uMDk3LjA1LS4xLjA0OS0uMTAyLjA0OC0uMTA1LjA0OC0uMTA2LjA0OC0uMTA5LjA0Ni0uMTExLjA0Ni0uMTE0LjA0Ni0uMTE1LjA0NC0uMTE4LjA0NC0uMTIuMDQzLS4xMjIuMDQzLS4xMjQuMDQyLS4xMjYuMDQxLS4xMjguMDQtLjEzLjAzOS0uMTMyLjAzOS0uMTM0LjAzOC0uMTM1LjAzNy0uMTM4LjAzNi0uMTM5LjAzNi0uMTQyLjAzNC0uMTQzLjAzNC0uMTQ0LjAzMy0uMTQ3LjAzMi0uMTQ4LjAzMi0uMTUuMDMtLjE1MS4wMy0uMTUzLjAyOC0uMTU0LjAyOC0uMTU2LjAyNy0uMTU4LjAyNi0uMTU5LjAyNC0uMTYxLjAyNC0uMTYyLjAyMy0uMTYzLjAyMy0uMTY1LjAyMS0uMTY2LjAyLS4xNjcuMDE5LS4xNjkuMDE4LS4xNjkuMDE3LS4xNzEuMDE2LS4xNzMuMDE1LS4xNzMuMDE0LS4xNzUuMDEzLS4xNzUuMDEyLS4xNzcuMDEtLjE3OC4wMS0uMTc5LjAwOS0uMTc5LjAwNy0uMTgxLjAwNi0uMTgyLjAwNi0uMTgyLjAwNC0uMTg0LjAwMy0uMTg0LjAwMS0uMTg1LjAwMS0uMTg1LS4wMDEtLjE4NC0uMDAxLS4xODQtLjAwMy0uMTgyLS4wMDQtLjE4Mi0uMDA2LS4xODEtLjAwNi0uMTc5LS4wMDctLjE3OS0uMDA5LS4xNzgtLjAxLS4xNzYtLjAxLS4xNzYtLjAxMi0uMTc1LS4wMTMtLjE3My0uMDE0LS4xNzItLjAxNS0uMTcxLS4wMTYtLjE3LS4wMTctLjE2OS0uMDE4LS4xNjctLjAxOS0uMTY2LS4wMi0uMTY1LS4wMjEtLjE2My0uMDIzLS4xNjItLjAyMy0uMTYxLS4wMjQtLjE1OS0uMDI0LS4xNTctLjAyNi0uMTU2LS4wMjctLjE1NS0uMDI4LS4xNTMtLjAyOC0uMTUxLS4wMy0uMTUtLjAzLS4xNDgtLjAzMi0uMTQ2LS4wMzItLjE0NS0uMDMzLS4xNDMtLjAzNC0uMTQxLS4wMzQtLjE0LS4wMzYtLjEzNy0uMDM2LS4xMzYtLjAzNy0uMTM0LS4wMzgtLjEzMi0uMDM5LS4xMy0uMDM5LS4xMjgtLjA0MS0uMTI2LS4wNDEtLjEyNC0uMDQxLS4xMjItLjA0My0uMTItLjA0My0uMTE3LS4wNDQtLjExNi0uMDQ0LS4xMTMtLjA0Ni0uMTEyLS4wNDYtLjEwOS0uMDQ2LS4xMDYtLjA0OC0uMTA1LS4wNDgtLjEwMi0uMDQ4LS4xLS4wNS0uMDk3LS4wNDktLjA5NS0uMDUxLS4wOTMtLjA1MS0uMDktLjA1Mi0uMDg3LS4wNTItLjA4NS0uMDUzLS4wODMtLjA1My0uMDgtLjA1NC0uMDc3LS4wNTR2NC4xNTN6bTguNzQtOC4xNzlsLS4yNTcuMDA0LS4yNTQuMDA1LS4yNS4wMDgtLjI0Ny4wMTEtLjI0NC4wMTItLjI0MS4wMTQtLjIzNy4wMTYtLjIzMy4wMTgtLjIzMS4wMjEtLjIyNi4wMjItLjIyNC4wMjMtLjIyLjAyNi0uMjE2LjAyNy0uMjEyLjAyOC0uMjEuMDMxLS4yMDUuMDMyLS4yMDIuMDMzLS4xOTguMDM0LS4xOTQuMDM2LS4xOTEuMDM4LS4xODcuMDM4LS4xODMuMDQtLjE3OS4wNDEtLjE3NS4wNDItLjE3Mi4wNDMtLjE2OC4wNDMtLjE2My4wNDUtLjE2LjA0Ni0uMTU1LjA0Ni0uMTUyLjA0OC0uMTQ4LjA0OC0uMTQzLjA0OC0uMTM5LjA0OS0uMTM2LjA1LS4xMzEuMDUtLjEyNi4wNTEtLjEyMy4wNTEtLjExOC4wNTEtLjExNC4wNTItLjExLjA1Mi0uMTA2LjA1Mi0uMTAxLjA1Mi0uMDk2LjA1Mi0uMDkyLjA1Mi0uMDg4LjA1Mi0uMDgzLjA1Mi0uMDc5LjA1Mi0uMDc0LjA1MS0uMDcuMDUyLS4wNjUuMDUxLS4wNi4wNS0uMDU2LjA1LS4wNTEuMDUtLjAyMy4wMjUtLjAyMy4wMjQtLjAyMS4wMjQtLjAyLjAyNS0uMDE5LjAyNC0uMDE4LjAyNC0uMDE3LjAyMy0uMDE1LjAyNC0uMDE0LjAyMy0uMDEzLjAyMy0uMDEyLjAyMy0uMDEuMDIzLS4wMS4wMjItLjAwOC4wMjItLjAwNi4wMjMtLjAwNi4wMjEtLjAwNC4wMjItLjAwNC4wMjEtLjAwMS4wMjEtLjAwMS4wMjEuMDAxLjAyMS4wMDEuMDIxLjAwNC4wMjEuMDA0LjAyMi4wMDYuMDIxLjAwNi4wMjMuMDA4LjAyMi4wMS4wMjIuMDEuMDIzLjAxMi4wMjMuMDEzLjAyMy4wMTQuMDIzLjAxNS4wMjQuMDE3LjAyMy4wMTguMDI0LjAxOS4wMjQuMDIuMDI1LjAyMS4wMjQuMDIzLjAyNC4wMjMuMDI1LjA1MS4wNS4wNTYuMDUuMDYuMDUuMDY1LjA1MS4wNy4wNTIuMDc0LjA1MS4wNzkuMDUyLjA4My4wNTIuMDg4LjA1Mi4wOTIuMDUyLjA5Ni4wNTIuMTAxLjA1Mi4xMDYuMDUyLjExLjA1Mi4xMTQuMDUyLjExOC4wNTEuMTIzLjA1MS4xMjYuMDUxLjEzMS4wNS4xMzYuMDUuMTM5LjA0OS4xNDMuMDQ4LjE0OC4wNDguMTUyLjA0OC4xNTUuMDQ2LjE2LjA0Ni4xNjMuMDQ1LjE2OC4wNDMuMTcyLjA0My4xNzUuMDQyLjE3OS4wNDEuMTgzLjA0LjE4Ny4wMzguMTkxLjAzOC4xOTQuMDM2LjE5OC4wMzQuMjAyLjAzMy4yMDUuMDMyLjIxLjAzMS4yMTIuMDI4LjIxNi4wMjcuMjIuMDI2LjIyNC4wMjMuMjI2LjAyMi4yMzEuMDIxLjIzMy4wMTguMjM3LjAxNi4yNDEuMDE0LjI0NC4wMTIuMjQ3LjAxMS4yNS4wMDguMjU0LjAwNS4yNTcuMDA0LjI2LjAwMS4yNi0uMDAxLjI1Ny0uMDA0LjI1NC0uMDA1LjI1LS4wMDguMjQ3LS4wMTEuMjQ0LS4wMTIuMjQxLS4wMTQuMjM3LS4wMTYuMjMzLS4wMTguMjMxLS4wMjEuMjI2LS4wMjIuMjI0LS4wMjMuMjItLjAyNi4yMTYtLjAyNy4yMTItLjAyOC4yMS0uMDMxLjIwNS0uMDMyLjIwMi0uMDMzLjE5OC0uMDM0LjE5NC0uMDM2LjE5MS0uMDM4LjE4Ny0uMDM4LjE4My0uMDQuMTc5LS4wNDEuMTc1LS4wNDIuMTcyLS4wNDMuMTY4LS4wNDMuMTYzLS4wNDUuMTYtLjA0Ni4xNTUtLjA0Ni4xNTItLjA0OC4xNDgtLjA0OC4xNDMtLjA0OC4xMzktLjA0OS4xMzYtLjA1LjEzMS0uMDUuMTI2LS4wNTEuMTIzLS4wNTEuMTE4LS4wNTEuMTE0LS4wNTIuMTEtLjA1Mi4xMDYtLjA1Mi4xMDEtLjA1Mi4wOTYtLjA1Mi4wOTItLjA1Mi4wODgtLjA1Mi4wODMtLjA1Mi4wNzktLjA1Mi4wNzQtLjA1MS4wNy0uMDUyLjA2NS0uMDUxLjA2LS4wNS4wNTYtLjA1LjA1MS0uMDUuMDIzLS4wMjUuMDIzLS4wMjQuMDIxLS4wMjQuMDItLjAyNS4wMTktLjAyNC4wMTgtLjAyNC4wMTctLjAyMy4wMTUtLjAyNC4wMTQtLjAyMy4wMTMtLjAyMy4wMTItLjAyMy4wMS0uMDIzLjAxLS4wMjIuMDA4LS4wMjIuMDA2LS4wMjMuMDA2LS4wMjEuMDA0LS4wMjIuMDA0LS4wMjEuMDAxLS4wMjEuMDAxLS4wMjEtLjAwMS0uMDIxLS4wMDEtLjAyMS0uMDA0LS4wMjEtLjAwNC0uMDIyLS4wMDYtLjAyMS0uMDA2LS4wMjMtLjAwOC0uMDIyLS4wMS0uMDIyLS4wMS0uMDIzLS4wMTItLjAyMy0uMDEzLS4wMjMtLjAxNC0uMDIzLS4wMTUtLjAyNC0uMDE3LS4wMjMtLjAxOC0uMDI0LS4wMTktLjAyNC0uMDItLjAyNS0uMDIxLS4wMjQtLjAyMy0uMDI0LS4wMjMtLjAyNS0uMDUxLS4wNS0uMDU2LS4wNS0uMDYtLjA1LS4wNjUtLjA1MS0uMDctLjA1Mi0uMDc0LS4wNTEtLjA3OS0uMDUyLS4wODMtLjA1Mi0uMDg4LS4wNTItLjA5Mi0uMDUyLS4wOTYtLjA1Mi0uMTAxLS4wNTItLjEwNi0uMDUyLS4xMS0uMDUyLS4xMTQtLjA1Mi0uMTE4LS4wNTEtLjEyMy0uMDUxLS4xMjYtLjA1MS0uMTMxLS4wNS0uMTM2LS4wNS0uMTM5LS4wNDktLjE0My0uMDQ4LS4xNDgtLjA0OC0uMTUyLS4wNDgtLjE1NS0uMDQ2LS4xNi0uMDQ2LS4xNjMtLjA0NS0uMTY4LS4wNDMtLjE3Mi0uMDQzLS4xNzUtLjA0Mi0uMTc5LS4wNDEtLjE4My0uMDQtLjE4Ny0uMDM4LS4xOTEtLjAzOC0uMTk0LS4wMzYtLjE5OC0uMDM0LS4yMDItLjAzMy0uMjA1LS4wMzItLjIxLS4wMzEtLjIxMi0uMDI4LS4yMTYtLjAyNy0uMjItLjAyNi0uMjI0LS4wMjMtLjIyNi0uMDIyLS4yMzEtLjAyMS0uMjMzLS4wMTgtLjIzNy0uMDE2LS4yNDEtLjAxNC0uMjQ0LS4wMTItLjI0Ny0uMDExLS4yNS0uMDA4LS4yNTQtLjAwNS0uMjU3LS4wMDQtLjI2LS4wMDEtLjI2LjAwMXoiLz48L3N5bWJvbD48L2RlZnM+PGRlZnM+PHN5bWJvbCBpZD0iY2xvY2siIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCI+PHBhdGggdHJhbnNmb3JtPSJzY2FsZSguNSkiIGQ9Ik0xMiAyYzUuNTE0IDAgMTAgNC40ODYgMTAgMTBzLTQuNDg2IDEwLTEwIDEwLTEwLTQuNDg2LTEwLTEwIDQuNDg2LTEwIDEwLTEwem0wLTJjLTYuNjI3IDAtMTIgNS4zNzMtMTIgMTJzNS4zNzMgMTIgMTIgMTIgMTItNS4zNzMgMTItMTItNS4zNzMtMTItMTItMTJ6bTUuODQ4IDEyLjQ1OWMuMjAyLjAzOC4yMDIuMzMzLjAwMS4zNzItMS45MDcuMzYxLTYuMDQ1IDEuMTExLTYuNTQ3IDEuMTExLS43MTkgMC0xLjMwMS0uNTgyLTEuMzAxLTEuMzAxIDAtLjUxMi43Ny01LjQ0NyAxLjEyNS03LjQ0NS4wMzQtLjE5Mi4zMTItLjE4MS4zNDMuMDE0bC45ODUgNi4yMzggNS4zOTQgMS4wMTF6Ii8+PC9zeW1ib2w+PC9kZWZzPjxkZWZzPjxtYXJrZXIgaWQ9ImFycm93aGVhZCIgcmVmWD0iOSIgcmVmWT0iNSIgbWFya2VyVW5pdHM9InVzZXJTcGFjZU9uVXNlIiBtYXJrZXJXaWR0aD0iMTIiIG1hcmtlckhlaWdodD0iMTIiIG9yaWVudD0iYXV0byI+PHBhdGggZD0iTSAwIDAgTCAxMCA1IEwgMCAxMCB6Ii8+PC9tYXJrZXI+PC9kZWZzPjxkZWZzPjxtYXJrZXIgaWQ9ImNyb3NzaGVhZCIgbWFya2VyV2lkdGg9IjE1IiBtYXJrZXJIZWlnaHQ9IjgiIG9yaWVudD0iYXV0byIgcmVmWD0iNCIgcmVmWT0iNSI+PHBhdGggZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjFwdCIgZD0iTSAxLDIgTCA2LDcgTSA2LDIgTCAxLDciIHN0eWxlPSJzdHJva2UtZGFzaGFycmF5OiAwLCAwOyIvPjwvbWFya2VyPjwvZGVmcz48ZGVmcz48bWFya2VyIGlkPSJmaWxsZWQtaGVhZCIgcmVmWD0iMTgiIHJlZlk9IjciIG1hcmtlcldpZHRoPSIyMCIgbWFya2VySGVpZ2h0PSIyOCIgb3JpZW50PSJhdXRvIj48cGF0aCBkPSJNIDE4LDcgTDksMTMgTDE0LDcgTDksMSBaIi8+PC9tYXJrZXI+PC9kZWZzPjxkZWZzPjxtYXJrZXIgaWQ9InNlcXVlbmNlbnVtYmVyIiByZWZYPSIxNSIgcmVmWT0iMTUiIG1hcmtlcldpZHRoPSI2MCIgbWFya2VySGVpZ2h0PSI0MCIgb3JpZW50PSJhdXRvIj48Y2lyY2xlIGN4PSIxNSIgY3k9IjE1IiByPSI2Ii8+PC9tYXJrZXI+PC9kZWZzPjxnPjxyZWN0IHg9IjUwIiB5PSI3NSIgZmlsbD0iI0VERjJBRSIgc3Ryb2tlPSIjNjY2IiB3aWR0aD0iMTA1MyIgaGVpZ2h0PSIzOSIgcng9IjAiIHJ5PSIwIiBjbGFzcz0ibm90ZSIvPjx0ZXh0IHg9IjU3NyIgeT0iODAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIGFsaWdubWVudC1iYXNlbGluZT0ibWlkZGxlIiBjbGFzcz0ibm90ZVRleHQiIGR5PSIxZW0iIHN0eWxlPSJmb250LXNpemU6IDE2cHg7IGZvbnQtd2VpZ2h0OiA0MDA7Ij48dHNwYW4geD0iNTc3Ij5Mb2FkaW5nIGEgbG9jYWwgZmlsZTwvdHNwYW4+PC90ZXh0PjwvZz48Zz48cmVjdCB4PSI4NzMiIHk9IjMyNCIgZmlsbD0iI0VERjJBRSIgc3Ryb2tlPSIjNjY2IiB3aWR0aD0iMTAiIGhlaWdodD0iMTM2IiByeD0iMCIgcnk9IjAiIGNsYXNzPSJhY3RpdmF0aW9uMCIvPjwvZz48dGV4dCB4PSIxNzUiIHk9IjEyOSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgYWxpZ25tZW50LWJhc2VsaW5lPSJtaWRkbGUiIGNsYXNzPSJtZXNzYWdlVGV4dCIgZHk9IjFlbSIgc3R5bGU9ImZvbnQtc2l6ZTogMTZweDsgZm9udC13ZWlnaHQ6IDQwMDsiPlBpY2sgZmlsZTwvdGV4dD48bGluZSB4MT0iNzUiIHkxPSIxNTgiIHgyPSIyNzUiIHkyPSIxNTgiIGNsYXNzPSJtZXNzYWdlTGluZTAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlPSJub25lIiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93aGVhZCkiIHN0eWxlPSJmaWxsOiBub25lOyIvPjx0ZXh0IHg9IjQ3NSIgeT0iMTczIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiBhbGlnbm1lbnQtYmFzZWxpbmU9Im1pZGRsZSIgY2xhc3M9Im1lc3NhZ2VUZXh0IiBkeT0iMWVtIiBzdHlsZT0iZm9udC1zaXplOiAxNnB4OyBmb250LXdlaWdodDogNDAwOyI+U3Bhd24gam9iPC90ZXh0PjxsaW5lIHgxPSIyNzUiIHkxPSIyMDQiIHgyPSI2NzUiIHkyPSIyMDQiIGNsYXNzPSJtZXNzYWdlTGluZTEiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlPSJub25lIiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93aGVhZCkiIHN0eWxlPSJzdHJva2UtZGFzaGFycmF5OiAzLCAzOyBmaWxsOiBub25lOyIvPjx0ZXh0IHg9IjY3NSIgeT0iMjE5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiBhbGlnbm1lbnQtYmFzZWxpbmU9Im1pZGRsZSIgY2xhc3M9Im1lc3NhZ2VUZXh0IiBkeT0iMWVtIiBzdHlsZT0iZm9udC1zaXplOiAxNnB4OyBmb250LXdlaWdodDogNDAwOyI+UmVhZCBmaWxlIChVaW50OEFycmF5KTwvdGV4dD48cGF0aCBkPSJNIDY3NSwyNTAgQyA3MzUsMjQwIDczNSwyODAgNjc1LDI3MCIgY2xhc3M9Im1lc3NhZ2VMaW5lMSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2U9Im5vbmUiIHN0eWxlPSJzdHJva2UtZGFzaGFycmF5OiAzLCAzOyBmaWxsOiBub25lOyIvPjx0ZXh0IHg9Ijc3NyIgeT0iMjk1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiBhbGlnbm1lbnQtYmFzZWxpbmU9Im1pZGRsZSIgY2xhc3M9Im1lc3NhZ2VUZXh0IiBkeT0iMWVtIiBzdHlsZT0iZm9udC1zaXplOiAxNnB4OyBmb250LXdlaWdodDogNDAwOyI+RGVzZXJpYWxpemUgZmlsZTwvdGV4dD48bGluZSB4MT0iNjc1IiB5MT0iMzI0IiB4Mj0iODc4IiB5Mj0iMzI0IiBjbGFzcz0ibWVzc2FnZUxpbmUwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZT0ibm9uZSIgbWFya2VyLWVuZD0idXJsKCNhcnJvd2hlYWQpIiBzdHlsZT0iZmlsbDogbm9uZTsiLz48dGV4dCB4PSI3NzQiIHk9IjMzOSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgYWxpZ25tZW50LWJhc2VsaW5lPSJtaWRkbGUiIGNsYXNzPSJtZXNzYWdlVGV4dCIgZHk9IjFlbSIgc3R5bGU9ImZvbnQtc2l6ZTogMTZweDsgZm9udC13ZWlnaHQ6IDQwMDsiPlJldHVybiBzcGF0aWFsIG9iamVjdDwvdGV4dD48bGluZSB4MT0iODczIiB5MT0iMzcwIiB4Mj0iNjc1IiB5Mj0iMzcwIiBjbGFzcz0ibWVzc2FnZUxpbmUwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZT0ibm9uZSIgbWFya2VyLWVuZD0idXJsKCNhcnJvd2hlYWQpIiBzdHlsZT0iZmlsbDogbm9uZTsiLz48dGV4dCB4PSI4NzciIHk9IjM4NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgYWxpZ25tZW50LWJhc2VsaW5lPSJtaWRkbGUiIGNsYXNzPSJtZXNzYWdlVGV4dCIgZHk9IjFlbSIgc3R5bGU9ImZvbnQtc2l6ZTogMTZweDsgZm9udC13ZWlnaHQ6IDQwMDsiPlN0b3JlIChyYXcpIG9iamVjdDwvdGV4dD48bGluZSB4MT0iNjc1IiB5MT0iNDE2IiB4Mj0iMTA3OCIgeTI9IjQxNiIgY2xhc3M9Im1lc3NhZ2VMaW5lMCIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2U9Im5vbmUiIG1hcmtlci1lbmQ9InVybCgjYXJyb3doZWFkKSIgc3R5bGU9ImZpbGw6IG5vbmU7Ii8+PHRleHQgeD0iNjc3IiB5PSI0MzEiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIGFsaWdubWVudC1iYXNlbGluZT0ibWlkZGxlIiBjbGFzcz0ibWVzc2FnZVRleHQiIGR5PSIxZW0iIHN0eWxlPSJmb250LXNpemU6IDE2cHg7IGZvbnQtd2VpZ2h0OiA0MDA7Ij5zdWNjZXNzPC90ZXh0PjxsaW5lIHgxPSIxMDc4IiB5MT0iNDYwIiB4Mj0iMjc1IiB5Mj0iNDYwIiBjbGFzcz0ibWVzc2FnZUxpbmUwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZT0ibm9uZSIgbWFya2VyLWVuZD0idXJsKCNhcnJvd2hlYWQpIiBzdHlsZT0iZmlsbDogbm9uZTsiLz48dGV4dCB4PSIxNzUiIHk9IjQ3NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgYWxpZ25tZW50LWJhc2VsaW5lPSJtaWRkbGUiIGNsYXNzPSJtZXNzYWdlVGV4dCIgZHk9IjFlbSIgc3R5bGU9ImZvbnQtc2l6ZTogMTZweDsgZm9udC13ZWlnaHQ6IDQwMDsiPlNlbmQgb2JqZWN0cyBsaXN0PC90ZXh0PjxsaW5lIHgxPSIyNzUiIHkxPSI1MDYiIHgyPSI3NSIgeTI9IjUwNiIgY2xhc3M9Im1lc3NhZ2VMaW5lMCIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2U9Im5vbmUiIG1hcmtlci1lbmQ9InVybCgjYXJyb3doZWFkKSIgc3R5bGU9ImZpbGw6IG5vbmU7Ii8+PHN0eWxlPkBpbXBvcnQgdXJsKCJodHRwczovL2NkbmpzLmNsb3VkZmxhcmUuY29tL2FqYXgvbGlicy9mb250LWF3ZXNvbWUvNi40LjAvY3NzL2FsbC5taW4uY3NzIik7PC9zdHlsZT48L3N2Zz4K" /></p></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="./pres.md">./pres.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              13/24
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: ./pres.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>Decoding Binary Data</h1></header>
+            
+            
+            <section><pre><code class="typescript">// worker.ts
+async function read_load_and_store_from_spatial_file(
+    db_name: string,
+    file: File // &lt;-- WebWorker can pass through File
+): Promise&lt;FlatTreeItem[]&gt; {
+    let obj = await local_loader.parse_file(file); // &lt;--
+
+    let db = await Store.connect(db_name);
+    await db.store_object(obj.key, obj.obj); // &lt;--
+
+    return [{ path: obj.name, key: obj.key, status: null }];
+}
+</code></pre></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="./pres.md">./pres.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              14/24
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: ./pres.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>Decoding Binary Data</h1></header>
+            
+            
+            <section><pre><code class="typescript">// local-loader.ts
+export async function parse_file(file: File): Promise&lt;SpatialObject&gt; {
+    // snip
+    let data = await file.arrayBuffer().then(x =&gt; new Uint8Array(x));
+    if (data.byteLength &gt; 2.2e9)
+        throw new Error('file is too large: a 2.2 GB limit is imposed');
+
+    switch (ext) {
+        case '':
+            throw new Error('file has no extension');
+
+        case '00t':
+            if (data.byteLength &gt; 100e6)
+                throw new Error('file is too large: 00t must be smaller than 100 MB');
+
+            try {
+                // Rust code!
+                let mesh = TriangleMeshSurface.from_vulcan_00t(data);
+                return SpatialObject.triangle_mesh_surface(name2, mesh);
+            } catch (error) {
+                throw new Error('unable decode to Vulcan file: ' + error);
+            }
+
+        default:
+            throw new Error('extension `' + ext + '` is currently unsupported');
+    }
+}
+</code></pre></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="./pres.md">./pres.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              15/24
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: ./pres.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>Decoding Binary Data</h1></header>
+            
+            
+            <section><pre><code class="rust">impl TriangleMeshSurface {
+    /// Deserialise a Vulcan 00t triangulation.
+    pub fn from_vulcan_00t(data: &amp;[u8]) -&gt; Result&lt;TriangleMeshSurface, String&gt; {
+        init_panic_hook(); // &lt;--
+
+        let tri = geom::io::trimesh::from_vulcan_00t(data).map_err(|e| e.to_string())?;
+        let translate = tri.aabb().origin;
+        let (points, indices) = tri.decompose();
+
+        let points = points
+            .into_iter()
+            .flat_map(|p| p.sub(translate).map(|x| x as f32))
+            .collect();
+        let indices = indices
+            .into_iter()
+            .flat_map(|(a, b, c)| [a, b, c])
+            .collect();
+        let translate = translate.into();
+
+        Ok(Self {
+            translate,
+            points,
+            indices,
+        })
+    }
+}
+</code></pre></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="./pres.md">./pres.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              16/24
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: ./pres.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>Storing <code>TriangleMeshSurface</code></h1></header>
+            
+            
+            <section><pre><code class="typescript">async store_object(key: string, obj: TriangleMeshSurface): Promise&lt;SpatialObject&gt; {
+    // remove any previous object with that key
+    await this.delete_object(key);
+
+    // write the bytes out
+    await this.transact('raw-objs', 'readwrite', store =&gt; {
+        const bytes = obj.to_bytes(); // &lt;--
+        return store.put_bytes(key, bytes);
+    });
+
+    const o = { key, status: Status.Preprocessing, roots: [], tiles: [] };
+    await this.update_object_list(o);
+
+    return o;
+}
+</code></pre></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="./pres.md">./pres.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              17/24
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: ./pres.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>Storing <code>TriangleMeshSurface</code></h1></header>
+            
+            
+            <section><pre><code class="rust">
+wasm_bindgen_store_impl!(TriangleMeshSurface);
+impl Store for TriangleMeshSurface {
+    fn to_bytes(&amp;self) -&gt; Vec&lt;u8&gt; {
+        // snip..
+    }
+
+    fn from_bytes(bytes: &amp;[u8]) -&gt; Result&lt;Self, String&gt; {
+        // snip..
+    }
+}
+
+macro_rules! wasm_bindgen_store_impl {
+    ($t:ty) =&gt; {
+        #[wasm_bindgen]
+        impl $t {
+            pub fn to_bytes(&amp;self) -&gt; Vec&lt;u8&gt; {
+                Store::to_bytes(self)
+            }
+            pub fn from_bytes(bytes: &amp;[u8]) -&gt; Result&lt;$t, String&gt; {
+                Store::from_bytes(bytes)
+            }
+        }
+    };
+}
+</code></pre></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="./pres.md">./pres.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              18/24
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: ./pres.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>Generating Representations</h1></header>
+            
+            
+            <section><pre><code class="typescript">async function preprocess_spatial_object(
+    db_name: string,
+    objkey: string,
+    progress: prgrs.Channel
+): Promise&lt;boolean&gt; {
+    const db = await Store.connect(db_name);
+    const mesh = await db.get_object(objkey); // &lt;-- (from_bytes)
+
+    const hash = mesh.generate_tiles_hash(extents); // &lt;--
+    const tiles = hash.tiles(); // &lt;--
+
+    for (const tile_idx of tiles) {
+        const zs = hash.sample(tile_idx); // &lt;--
+        if (zs) {
+            await db.store_tile(objkey, tile_idx, zs);
+        }
+    }
+}
+</code></pre></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="./pres.md">./pres.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              19/24
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: ./pres.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>Generating Representations</h1></header>
+            
+            
+            <section><pre><code class="rust">impl TriangleMesh {
+    pub fn generate_tiles_hash(&amp;self, extents: &amp;Extents3) -&gt; TileHash {
+        init_panic_hook();
+        // snip..
+        TileHash {
+            tris,
+            tiles,
+            extents: *extents,
+        }
+    }
+}
+</code></pre></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="./pres.md">./pres.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              20/24
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: ./pres.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>Generating Representations</h1></header>
+            
+            
+            <section><pre><code class="rust">#[wasm_bindgen]
+pub struct TileHash {
+    tris: Vec&lt;Tri&gt;,
+    tiles: HashMap&lt;u32, Vec&lt;usize&gt;&gt;,
+    extents: Extents3,
+}
+
+#[wasm_bindgen]
+impl TileHash {
+    pub fn tiles(&amp;self) -&gt; Vec&lt;u32&gt; {
+        self.tiles.keys().copied().collect()
+    }
+
+    pub fn sample(&amp;self, tile_idx: u32) -&gt; Option&lt;Vec&lt;f32&gt;&gt; {
+        init_panic_hook();
+        // snip..
+        let grid = Grid::sample_with_bounds(..);
+        // snip..
+    }
+}
+</code></pre></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="./pres.md">./pres.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              21/24
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: ./pres.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>Closing Thoughts</h1></header>
+            
+            
+            <section><ul>
+<li>Structs turn into (function) points in JS land<ul>
+<li>Little ability to pass by value, even for simple structs</li>
+<li>eg <code>Point3</code></li>
+</ul>
+</li>
+<li>Passing by value will null out the value in JS land<ul>
+<li>Even when value is <code>Copy</code></li>
+</ul>
+</li>
+<li>Panics in Rust cause headaches</li>
+<li><code>wasm-pack --debug</code> is SLOW</li>
+<li>32bit memory address support</li>
+<li>Coding for WASM breaks Rust 'idioms'<ul>
+<li>Results in an interop crate</li>
+</ul>
+</li>
+</ul></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="./pres.md">./pres.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              22/24
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: ./pres.md -->
+      <div class="slide-wrapper">
+        <div class="slide has_qr">
+          <div class="inner">
+            
+            <header><h1>Thanks!</h1></header>
+            
+            
+            <section><p><em>Blog post:</em></p>
+<p class="qr"><img src="https://chart.apis.google.com/chart?chs=450x450&cht=qr&chl=https://www.kurtlawrence.info/blog/detailed-web-based-3d-rendering-of-mining-spatial-data&chf=bg,s,00000000&choe=UTF-8" alt="QR Code" /></p></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="./pres.md">./pres.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              23/24
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+      <!-- slide source: ./pres.md -->
+      <div class="slide-wrapper">
+        <div class="slide">
+          <div class="inner">
+            
+            <header><h1>Tip: Printing Stack Trace</h1></header>
+            
+            
+            <section><ul>
+<li>Invoke <code>init_panic_hook</code> at entry points</li>
+</ul>
+<pre><code class="rust">#[cfg(feature = &quot;err-capture&quot;)]
+fn init_panic_hook() {
+    console_error_panic_hook::set_once();
+}
+#[cfg(not(feature = &quot;err-capture&quot;))]
+fn init_panic_hook() {}
+</code></pre></section>
+            
+          </div>
+          <div class="presenter_notes">
+            <header><h1>Presenter Notes</h1></header>
+            <section>
+            
+            </section>
+          </div>
+          <footer>
+            
+            <aside class="source">
+              Source: <a href="./pres.md">./pres.md</a>
+            </aside>
+            
+            <aside class="page_number">
+              24/24
+            </aside>
+          </footer>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+  
+  <div id="toc" class="sidebar hidden">
+    <h2>Table of Contents</h2>
+    <table>
+      <caption>Table of Contents</caption>
+      
+      <tr id="toc-row-1">
+        <th><a href="#slide1">Integrating WASM <br> Building and deploying WASM within a web app</a></th>
+        <td><a href="#slide1">1</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-2">
+        <th><a href="#slide2">Usage Context</a></th>
+        <td><a href="#slide2">2</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-3">
+        <th><a href="#slide3">Overview</a></th>
+        <td><a href="#slide3">3</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-4">
+        <th><a href="#slide4">Benefits of WASM (or, why WASM?)</a></th>
+        <td><a href="#slide4">4</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-5">
+        <th><a href="#slide5">Building and Deploying</a></th>
+        <td><a href="#slide5">5</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-6">
+        <th><a href="#slide6">Project Structure</a></th>
+        <td><a href="#slide6">6</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-7">
+        <th><a href="#slide7">Project Structure</a></th>
+        <td><a href="#slide7">7</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-8">
+        <th><a href="#slide8">Webpack Config</a></th>
+        <td><a href="#slide8">8</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-9">
+        <th><a href="#slide9">Building for Deployment</a></th>
+        <td><a href="#slide9">9</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-10">
+        <th><a href="#slide10">Getting Dependencies to Build</a></th>
+        <td><a href="#slide10">10</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-11">
+        <th><a href="#slide11">Exporter File</a></th>
+        <td><a href="#slide11">11</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-12">
+        <th><a href="#slide12">Integration Examples</a></th>
+        <td><a href="#slide12">12</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-13">
+        <th><a href="#slide13">Decoding Binary Data</a></th>
+        <td><a href="#slide13">13</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-14">
+        <th><a href="#slide14">Decoding Binary Data</a></th>
+        <td><a href="#slide14">14</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-15">
+        <th><a href="#slide15">Decoding Binary Data</a></th>
+        <td><a href="#slide15">15</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-16">
+        <th><a href="#slide16">Decoding Binary Data</a></th>
+        <td><a href="#slide16">16</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-17">
+        <th><a href="#slide17">Storing <code>TriangleMeshSurface</code></a></th>
+        <td><a href="#slide17">17</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-18">
+        <th><a href="#slide18">Storing <code>TriangleMeshSurface</code></a></th>
+        <td><a href="#slide18">18</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-19">
+        <th><a href="#slide19">Generating Representations</a></th>
+        <td><a href="#slide19">19</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-20">
+        <th><a href="#slide20">Generating Representations</a></th>
+        <td><a href="#slide20">20</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-21">
+        <th><a href="#slide21">Generating Representations</a></th>
+        <td><a href="#slide21">21</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-22">
+        <th><a href="#slide22">Closing Thoughts</a></th>
+        <td><a href="#slide22">22</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-23">
+        <th><a href="#slide23">Thanks!</a></th>
+        <td><a href="#slide23">23</a></td>
+      </tr>
+      
+      
+      <tr id="toc-row-24">
+        <th><a href="#slide24">Tip: Printing Stack Trace</a></th>
+        <td><a href="#slide24">24</a></td>
+      </tr>
+      
+      
+    </table>
+  </div>
+  
+  <div id="help" class="sidebar hidden">
+    <h2>Help</h2>
+    <table>
+      <caption>Help</caption>
+      <tr>
+        <th>Table of Contents</th>
+        <td>t</td>
+      </tr>
+      <tr>
+        <th>Exposé</th>
+        <td>ESC</td>
+      </tr>
+      <tr>
+        <th>Full screen slides</th>
+        <td>e</td>
+      </tr>
+      <tr>
+        <th>Presenter View</th>
+        <td>p</td>
+      </tr>
+      <tr>
+        <th>Source Files</th>
+        <td>s</td>
+      </tr>
+      <tr>
+        <th>Slide Numbers</th>
+        <td>n</td>
+      </tr>
+      <tr>
+        <th>Toggle screen blanking</th>
+        <td>b</td>
+      </tr>
+      <tr>
+        <th>Show/hide slide context</th>
+        <td>c</td>
+      </tr>
+      <tr>
+        <th>Notes</th>
+        <td>2</td>
+      </tr>
+      <tr>
+        <th>Help</th>
+        <td>h</td>
+      </tr>
+    </table>
+  </div>
+  <script>main()</script>
+</body>
+</html>
